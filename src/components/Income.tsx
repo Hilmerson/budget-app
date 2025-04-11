@@ -2,6 +2,7 @@
 
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { useState, useEffect } from 'react';
+import { XPGainAnimation } from './Gamification';
 
 const incomeCategories = [
   'Salary',
@@ -26,12 +27,17 @@ interface IncomeWithMonthly {
 }
 
 export default function Income() {
-  const { incomes, addIncome, removeIncome, setTotalIncome, employmentMode } = useBudgetStore();
+  const { incomes, addIncome, removeIncome, setTotalIncome, employmentMode, addExperience } = useBudgetStore();
   const [newIncome, setNewIncome] = useState({
     source: '',
     amount: 0,
     frequency: 'monthly' as Frequency
   });
+  
+  // Animation and loading states
+  const [showXpAnimation, setShowXpAnimation] = useState(false);
+  const [xpAmount, setXpAmount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Convert all incomes to monthly for comparison
   const monthlyIncomes = incomes.map(income => {
@@ -57,8 +63,11 @@ export default function Income() {
   }, [totalIncome, setTotalIncome]);
 
   const handleAddIncome = async () => {
-    if (newIncome.source && newIncome.amount > 0) {
+    if (newIncome.source && newIncome.amount > 0 && !isSubmitting) {
       try {
+        // Prevent multiple submissions
+        setIsSubmitting(true);
+
         // Add to local state first
         addIncome(newIncome);
         
@@ -81,13 +90,31 @@ export default function Income() {
           throw new Error('Failed to save income to database');
         }
         
+        // Calculate XP based on amount (higher amounts give more XP)
+        const baseXP = 10;
+        const amountFactor = Math.floor(newIncome.amount / 100);
+        const earnedXP = Math.min(baseXP + amountFactor, 30); // Cap at 30 XP
+        
         // Reset form
         setNewIncome({ source: '', amount: 0, frequency: 'monthly' });
+        
+        // Add XP and show animation - this will be visible while we reload
+        addExperience(earnedXP);
+        setXpAmount(earnedXP);
+        setShowXpAnimation(true);
       } catch (error) {
         console.error('Error saving income:', error);
         // You could show an error message to the user here
+        setIsSubmitting(false); // Enable the form again if there's an error
       }
     }
+  };
+
+  // Function to handle when animation completes
+  const handleAnimationComplete = () => {
+    setShowXpAnimation(false);
+    // Perform page reload after animation completes
+    window.location.reload();
   };
 
   // Helper function to calculate monthly amount
@@ -114,7 +141,7 @@ export default function Income() {
   };
 
   return (
-    <div>
+    <div className={isSubmitting ? "pointer-events-none opacity-70" : ""}>
       {/* Header with illustration */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center">
@@ -195,14 +222,14 @@ export default function Income() {
 
               <button
                 onClick={handleAddIncome}
-                disabled={!newIncome.source || !newIncome.amount}
+                disabled={!newIncome.source || !newIncome.amount || isSubmitting}
                 className={`w-full py-3 px-4 font-semibold rounded-lg transition-all duration-200 ${
-                  newIncome.source && newIncome.amount
+                  newIncome.source && newIncome.amount && !isSubmitting
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                Add Income Source
+                {isSubmitting ? 'Adding...' : 'Add Income Source'}
               </button>
             </div>
           </div>
@@ -249,11 +276,11 @@ export default function Income() {
                     </div>
                     <button
                       onClick={async () => {
-                        // Remove from local state first
-                        removeIncome(income.id);
-                        
-                        // Then delete from database
                         try {
+                          // First remove from UI state for responsive feel
+                          removeIncome(income.id);
+                          
+                          // Then try to delete from database
                           const response = await fetch(`/api/income/${income.id}`, {
                             method: 'DELETE',
                           });
@@ -261,6 +288,9 @@ export default function Income() {
                           if (!response.ok) {
                             throw new Error('Failed to delete income from database');
                           }
+                          
+                          // No need to reload the page after deletion
+                          // The UI state is already updated by removeIncome
                         } catch (error) {
                           console.error('Error deleting income:', error);
                           // You could show an error message to the user here
@@ -300,6 +330,13 @@ export default function Income() {
           </div>
         </div>
       </div>
+      
+      {/* XP Animation */}
+      <XPGainAnimation 
+        amount={xpAmount} 
+        isVisible={showXpAnimation} 
+        onAnimationComplete={handleAnimationComplete} 
+      />
     </div>
   );
 } 

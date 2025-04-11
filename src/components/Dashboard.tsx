@@ -38,7 +38,11 @@ export default function Dashboard() {
     addExpense, 
     clearExpenses, 
     setIncomes: updateStoreIncomes, 
-    setExpenses: updateStoreExpenses 
+    setExpenses: updateStoreExpenses,
+    level,
+    experience,
+    nextLevelExperience,
+    addExperience
   } = useBudgetStore();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -60,12 +64,25 @@ export default function Dashboard() {
   const [taxAmount, setTaxAmount] = useState(0);
   const [afterTaxIncome, setAfterTaxIncome] = useState(0);
 
-  // Mock gamification data
-  const [level, setLevel] = useState(3);
-  const [experience, setExperience] = useState(245);
-  const [nextLevelExperience, setNextLevelExperience] = useState(500);
+  // Mock gamification data - now using store values
   const [streak, setStreak] = useState(4);
   const [healthScore, setHealthScore] = useState(72);
+
+  // Set the active sidebar item based on URL hash when component mounts
+  useEffect(() => {
+    // Check for hash in the URL (e.g., #income, #expenses)
+    const hash = window.location.hash?.substring(1); // Remove the # character
+    if (hash && ['dashboard', 'income', 'expenses', 'achievements', 'settings'].includes(hash)) {
+      setActiveSidebarItem(hash);
+    }
+  }, []);
+
+  // Update URL hash when active sidebar item changes
+  useEffect(() => {
+    if (activeSidebarItem) {
+      window.location.hash = activeSidebarItem;
+    }
+  }, [activeSidebarItem]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -165,8 +182,8 @@ export default function Dashboard() {
         throw new Error('Failed to update income');
       }
 
-      // In a real app, we'd update the experience here
-      setExperience(Math.min(experience + 10, nextLevelExperience));
+      // Add experience for updating income
+      addExperience(10);
     } catch (error) {
       setError('Failed to save income');
     }
@@ -197,8 +214,8 @@ export default function Dashboard() {
         description: ''
       });
 
-      // In a real app, we'd update the experience here
-      setExperience(Math.min(experience + 5, nextLevelExperience));
+      // Add experience for adding expenses
+      addExperience(5);
     } catch (error) {
       setError('Failed to add expense');
     }

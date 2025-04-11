@@ -1,7 +1,8 @@
 'use client';
 
 import { useBudgetStore } from '@/store/useBudgetStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { XPGainAnimation } from './Gamification';
 
 const expenseCategories = [
   'Housing',
@@ -19,12 +20,17 @@ const expenseCategories = [
 type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export default function Expenses() {
-  const { expenses, addExpense, removeExpense, afterTaxIncome } = useBudgetStore();
+  const { expenses, addExpense, removeExpense, afterTaxIncome, addExperience } = useBudgetStore();
   const [newExpense, setNewExpense] = useState({
     category: '',
     amount: 0,
     frequency: 'monthly' as Frequency
   });
+  
+  // Animation and loading states
+  const [showXpAnimation, setShowXpAnimation] = useState(false);
+  const [xpAmount, setXpAmount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalExpenses = expenses.reduce((sum, expense) => {
     let monthlyAmount = expense.amount;
@@ -41,8 +47,11 @@ export default function Expenses() {
   const remainingIncome = afterTaxIncome / 12 - totalExpenses; // Convert annual after-tax income to monthly
 
   const handleAddExpense = async () => {
-    if (newExpense.category && newExpense.amount > 0) {
+    if (newExpense.category && newExpense.amount > 0 && !isSubmitting) {
       try {
+        // Prevent multiple submissions
+        setIsSubmitting(true);
+        
         // Add to local state first
         addExpense(newExpense);
         
@@ -64,13 +73,31 @@ export default function Expenses() {
           throw new Error('Failed to save expense to database');
         }
         
+        // Calculate XP based on budget discipline (track expenses = good financial habit)
+        const baseXP = 5; // Base XP for adding an expense
+        const budgetXP = 8; // Give a fixed amount as a reward for tracking expenses
+        const earnedXP = baseXP + budgetXP;
+        
         // Reset form
         setNewExpense({ category: '', amount: 0, frequency: 'monthly' });
+        
+        // Add XP and show animation - this will be visible while we reload
+        addExperience(earnedXP);
+        setXpAmount(earnedXP);
+        setShowXpAnimation(true);
       } catch (error) {
         console.error('Error saving expense:', error);
         // You could show an error message to the user here
+        setIsSubmitting(false); // Enable the form again if there's an error
       }
     }
+  };
+
+  // Function to handle when animation completes
+  const handleAnimationComplete = () => {
+    setShowXpAnimation(false);
+    // Perform page reload after animation completes
+    window.location.reload();
   };
 
   // Helper function to calculate monthly amount
@@ -97,7 +124,7 @@ export default function Expenses() {
   };
 
   return (
-    <div>
+    <div className={isSubmitting ? "pointer-events-none opacity-70" : ""}>
       {/* Header with illustration */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex flex-col md:flex-row justify-between items-center">
@@ -178,14 +205,14 @@ export default function Expenses() {
 
               <button
                 onClick={handleAddExpense}
-                disabled={!newExpense.category || !newExpense.amount}
+                disabled={!newExpense.category || !newExpense.amount || isSubmitting}
                 className={`w-full py-3 px-4 font-semibold rounded-lg transition-all duration-200 ${
-                  newExpense.category && newExpense.amount
+                  newExpense.category && newExpense.amount && !isSubmitting
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                Add Expense
+                {isSubmitting ? 'Adding...' : 'Add Expense'}
               </button>
             </div>
           </div>
@@ -232,11 +259,11 @@ export default function Expenses() {
                     </div>
                     <button
                       onClick={async () => {
-                        // Remove from local state first
-                        removeExpense(expense.id);
-                        
-                        // Then delete from database
                         try {
+                          // First remove from UI state for responsive feel
+                          removeExpense(expense.id);
+                          
+                          // Then try to delete from database
                           const response = await fetch(`/api/expenses/${expense.id}`, {
                             method: 'DELETE',
                           });
@@ -244,6 +271,9 @@ export default function Expenses() {
                           if (!response.ok) {
                             throw new Error('Failed to delete expense from database');
                           }
+                          
+                          // No need to reload the page after deletion
+                          // The UI state is already updated by removeExpense
                         } catch (error) {
                           console.error('Error deleting expense:', error);
                           // You could show an error message to the user here
@@ -285,6 +315,13 @@ export default function Expenses() {
           </div>
         </div>
       </div>
+      
+      {/* XP Animation */}
+      <XPGainAnimation 
+        amount={xpAmount} 
+        isVisible={showXpAnimation} 
+        onAnimationComplete={handleAnimationComplete} 
+      />
     </div>
   );
 } 

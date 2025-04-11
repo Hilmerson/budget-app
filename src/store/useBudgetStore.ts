@@ -36,6 +36,11 @@ interface BudgetState {
   incomes: Income[];
   totalIncome: number;
   
+  // Gamification
+  level: number;
+  experience: number;
+  nextLevelExperience: number;
+  
   // Actions
   setEmploymentMode: (mode: 'full-time' | 'contract' | 'other') => void;
   setIncome: (amount: number) => void;
@@ -51,6 +56,10 @@ interface BudgetState {
   clearIncomes: () => void;
   setIncomes: (incomes: Income[]) => void;
   calculateTaxes: () => void;
+  
+  // XP methods
+  addExperience: (amount: number) => void;
+  calculateLevel: () => void;
 }
 
 const calculateTaxBracket = (income: number): number => {
@@ -94,6 +103,11 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   expenses: [],
   incomes: [],
   totalIncome: 0,
+  
+  // Gamification
+  level: 1,
+  experience: 0,
+  nextLevelExperience: 100,
 
   // Actions
   setEmploymentMode: (mode) => set({ employmentMode: mode }),
@@ -147,5 +161,56 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     const afterTaxIncome = totalIncome - (taxAmount / 12); // Monthly after-tax income
     
     set({ taxBracket, taxAmount, afterTaxIncome });
+  },
+  
+  // XP methods
+  addExperience: (amount) => {
+    set((state) => {
+      const newExperience = state.experience + amount;
+      return { experience: newExperience };
+    });
+    get().calculateLevel();
+  },
+  
+  calculateLevel: () => {
+    const { experience } = get();
+    
+    // Simple level calculation
+    // Level 1: 0-100 XP
+    // Level 2: 101-250 XP
+    // Level 3: 251-450 XP
+    // Level 4: 451-700 XP
+    // Level 5: 701-1000 XP
+    // And so on...
+    
+    let level = 1;
+    let nextLevelExperience = 100;
+    
+    if (experience > 100) level = 2;
+    if (experience > 250) level = 3;
+    if (experience > 450) level = 4;
+    if (experience > 700) level = 5;
+    if (experience > 1000) level = 6;
+    if (experience > 1350) level = 7;
+    if (experience > 1750) level = 8;
+    if (experience > 2200) level = 9;
+    if (experience > 2700) level = 10;
+    
+    // Set next level target
+    switch (level) {
+      case 1: nextLevelExperience = 100; break;
+      case 2: nextLevelExperience = 250; break;
+      case 3: nextLevelExperience = 450; break;
+      case 4: nextLevelExperience = 700; break;
+      case 5: nextLevelExperience = 1000; break;
+      case 6: nextLevelExperience = 1350; break;
+      case 7: nextLevelExperience = 1750; break;
+      case 8: nextLevelExperience = 2200; break;
+      case 9: nextLevelExperience = 2700; break;
+      case 10: nextLevelExperience = 3300; break;
+      default: nextLevelExperience = level * 350; break;
+    }
+    
+    set({ level, nextLevelExperience });
   }
 })); 

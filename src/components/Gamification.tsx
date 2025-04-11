@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface BadgeProps {
   name: string;
@@ -246,6 +246,59 @@ export function Achievements() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+export function XPGainAnimation({ amount, isVisible, onAnimationComplete }: { 
+  amount: number; 
+  isVisible: boolean;
+  onAnimationComplete: () => void;
+}) {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onAnimationComplete();
+      }, 2000); // Animation lasts 2 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onAnimationComplete]);
+  
+  if (!isVisible) return null;
+  
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+      <div 
+        className="animate-bounce-up-fade-out bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-xl"
+        style={{
+          animation: 'bounce-up-fade-out 2s ease-out forwards',
+        }}
+      >
+        +{amount} XP
+      </div>
+      
+      {/* Add keyframes for the animation */}
+      <style jsx global>{`
+        @keyframes bounce-up-fade-out {
+          0% {
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+          }
+          30% {
+            opacity: 1;
+            transform: scale(1.2) translateY(-10px);
+          }
+          70% {
+            opacity: 1;
+            transform: scale(1) translateY(-30px);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0.8) translateY(-50px);
+          }
+        }
+      `}</style>
     </div>
   );
 } 
