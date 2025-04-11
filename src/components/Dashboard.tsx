@@ -42,7 +42,8 @@ export default function Dashboard() {
     level,
     experience,
     nextLevelExperience,
-    addExperience
+    addExperience,
+    setExperience
   } = useBudgetStore();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -97,6 +98,7 @@ export default function Dashboard() {
       fetchUserData();
       fetchExpenses();
       fetchIncomes();
+      fetchExperience();
     }
   }, [status, session]);
 
@@ -161,6 +163,28 @@ export default function Dashboard() {
       }
     } catch (error) {
       setError('Failed to load income sources');
+    }
+  };
+
+  const fetchExperience = async () => {
+    try {
+      const response = await fetch('/api/user/experience');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch experience data');
+      }
+      
+      const data = await response.json();
+      
+      if (data.experience !== undefined && data.level !== undefined) {
+        // Update Zustand store with saved experience and level
+        setExperience({
+          experience: data.experience,
+          level: data.level
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load experience data:', error);
     }
   };
 

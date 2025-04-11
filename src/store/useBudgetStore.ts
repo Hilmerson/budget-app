@@ -59,6 +59,7 @@ interface BudgetState {
   
   // XP methods
   addExperience: (amount: number) => void;
+  setExperience: (data: { experience: number; level: number }) => void;
   calculateLevel: () => void;
 }
 
@@ -170,6 +171,38 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return { experience: newExperience };
     });
     get().calculateLevel();
+    
+    // Save experience and level to the database
+    const { experience, level } = get();
+    
+    // Use setTimeout to avoid blocking the UI
+    setTimeout(async () => {
+      try {
+        const response = await fetch('/api/user/experience', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            experience,
+            level
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to save experience to database');
+        }
+      } catch (error) {
+        console.error('Error saving experience:', error);
+      }
+    }, 0);
+  },
+  
+  setExperience: (data) => {
+    set({ 
+      experience: data.experience, 
+      level: data.level 
+    });
   },
   
   calculateLevel: () => {
