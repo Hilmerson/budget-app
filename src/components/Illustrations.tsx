@@ -59,7 +59,11 @@ export function FinancialHealthCard({ score }: { score: number }) {
         </div>
         
         <div className="flex justify-between items-center mt-3">
-          <div className="text-3xl font-bold">{score}</div>
+          <div className="flex items-center">
+            <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${getGradientClass()} flex items-center justify-center shadow-md`}>
+              <span className="text-2xl font-bold text-white">{score}</span>
+            </div>
+          </div>
           <div className={`px-3 py-1 rounded-full text-white text-sm font-medium bg-gradient-to-r ${getGradientClass()}`}>
             {getLabel()}
           </div>
@@ -115,9 +119,15 @@ export function SavingsGoalCard({
           ></div>
         </div>
         
-        <div className="flex justify-between">
-          <span className="text-lg font-bold">${current.toLocaleString()}</span>
-          <span className="text-gray-500">${target.toLocaleString()}</span>
+        <div className="flex justify-between items-end mt-3">
+          <div>
+            <div className="text-sm text-gray-500 mb-1">Current savings</div>
+            <div className="text-2xl font-bold text-indigo-700">${current.toLocaleString()}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-500 mb-1">Target</div>
+            <div className="text-lg font-medium text-gray-800">${target.toLocaleString()}</div>
+          </div>
         </div>
       </div>
     </div>

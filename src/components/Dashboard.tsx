@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useBudgetStore } from '@/store/useBudgetStore';
 import { 
   WelcomeIllustration, 
   FinancialHealthCard, 
@@ -31,6 +32,14 @@ interface Expense {
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { 
+    addIncome, 
+    clearIncomes, 
+    addExpense, 
+    clearExpenses, 
+    setIncomes: updateStoreIncomes, 
+    setExpenses: updateStoreExpenses 
+  } = useBudgetStore();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [income, setIncome] = useState(0);
@@ -70,6 +79,7 @@ export default function Dashboard() {
     if (status === 'authenticated' && session?.user) {
       fetchUserData();
       fetchExpenses();
+      fetchIncomes();
     }
   }, [status, session]);
 
@@ -106,9 +116,34 @@ export default function Dashboard() {
       }
       
       const expensesData = await response.json();
+      // Update local state
       setExpenses(expensesData);
+      
+      // Also update the Zustand store with the original IDs preserved
+      if (Array.isArray(expensesData)) {
+        updateStoreExpenses(expensesData);
+      }
     } catch (error) {
       setError('Failed to load expenses');
+    }
+  };
+
+  const fetchIncomes = async () => {
+    try {
+      const response = await fetch('/api/income');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch income sources');
+      }
+      
+      const incomesData = await response.json();
+      
+      // Use setIncomes to preserve the original database IDs
+      if (Array.isArray(incomesData)) {
+        updateStoreIncomes(incomesData);
+      }
+    } catch (error) {
+      setError('Failed to load income sources');
     }
   };
 

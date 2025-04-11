@@ -7,6 +7,7 @@ interface Expense {
   category: string;
   amount: number;
   frequency: Frequency;
+  description?: string;
 }
 
 interface Income {
@@ -43,8 +44,12 @@ interface BudgetState {
   setConfirmed: (confirmed: boolean) => void;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   removeExpense: (id: string) => void;
+  clearExpenses: () => void;
+  setExpenses: (expenses: Expense[]) => void;
   addIncome: (income: Omit<Income, 'id'>) => void;
   removeIncome: (id: string) => void;
+  clearIncomes: () => void;
+  setIncomes: (incomes: Income[]) => void;
   calculateTaxes: () => void;
 }
 
@@ -109,6 +114,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       expenses: state.expenses.filter((expense) => expense.id !== id)
     })),
+    
+  clearExpenses: () => set({ expenses: [] }),
+  
+  setExpenses: (expenses) => set({ expenses }),
   
   addIncome: (income) => 
     set((state) => ({
@@ -119,6 +128,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set((state) => ({
       incomes: state.incomes.filter((income) => income.id !== id)
     })),
+    
+  clearIncomes: () => set({ incomes: [] }),
+  
+  setIncomes: (incomes) => set({ incomes }),
   
   calculateTaxes: () => {
     const { totalIncome, employmentMode } = get();

@@ -56,10 +56,37 @@ export default function Income() {
     setTotalIncome(totalIncome);
   }, [totalIncome, setTotalIncome]);
 
-  const handleAddIncome = () => {
+  const handleAddIncome = async () => {
     if (newIncome.source && newIncome.amount > 0) {
-      addIncome(newIncome);
-      setNewIncome({ source: '', amount: 0, frequency: 'monthly' });
+      try {
+        // Add to local state first
+        addIncome(newIncome);
+        
+        // Save to database
+        const response = await fetch('/api/income', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            source: newIncome.source,
+            amount: newIncome.amount,
+            frequency: newIncome.frequency,
+            description: '',
+            date: new Date().toISOString(),
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save income to database');
+        }
+        
+        // Reset form
+        setNewIncome({ source: '', amount: 0, frequency: 'monthly' });
+      } catch (error) {
+        console.error('Error saving income:', error);
+        // You could show an error message to the user here
+      }
     }
   };
 
@@ -221,7 +248,24 @@ export default function Income() {
                       </div>
                     </div>
                     <button
-                      onClick={() => removeIncome(income.id)}
+                      onClick={async () => {
+                        // Remove from local state first
+                        removeIncome(income.id);
+                        
+                        // Then delete from database
+                        try {
+                          const response = await fetch(`/api/income/${income.id}`, {
+                            method: 'DELETE',
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error('Failed to delete income from database');
+                          }
+                        } catch (error) {
+                          console.error('Error deleting income:', error);
+                          // You could show an error message to the user here
+                        }
+                      }}
                       className="text-gray-400 hover:text-red-600 transition-colors group-hover:opacity-100 opacity-0 md:opacity-100"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

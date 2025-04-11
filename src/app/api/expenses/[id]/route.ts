@@ -10,6 +10,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // First validate that params.id exists
+    const { id } = params;
+    if (!id) {
+      return NextResponse.json(
+        { message: 'Missing expense ID' },
+        { status: 400 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
@@ -34,7 +43,7 @@ export async function DELETE(
 
     // Get the expense to check ownership
     const expense = await prisma.expense.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!expense) {
@@ -54,7 +63,7 @@ export async function DELETE(
 
     // Delete the expense
     await prisma.expense.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json(

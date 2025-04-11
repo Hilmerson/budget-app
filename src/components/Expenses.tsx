@@ -40,10 +40,36 @@ export default function Expenses() {
 
   const remainingIncome = afterTaxIncome / 12 - totalExpenses; // Convert annual after-tax income to monthly
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (newExpense.category && newExpense.amount > 0) {
-      addExpense(newExpense);
-      setNewExpense({ category: '', amount: 0, frequency: 'monthly' });
+      try {
+        // Add to local state first
+        addExpense(newExpense);
+        
+        // Save to database
+        const response = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            category: newExpense.category,
+            amount: newExpense.amount,
+            frequency: newExpense.frequency,
+            description: '',
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save expense to database');
+        }
+        
+        // Reset form
+        setNewExpense({ category: '', amount: 0, frequency: 'monthly' });
+      } catch (error) {
+        console.error('Error saving expense:', error);
+        // You could show an error message to the user here
+      }
     }
   };
 
@@ -205,7 +231,24 @@ export default function Expenses() {
                       </div>
                     </div>
                     <button
-                      onClick={() => removeExpense(expense.id)}
+                      onClick={async () => {
+                        // Remove from local state first
+                        removeExpense(expense.id);
+                        
+                        // Then delete from database
+                        try {
+                          const response = await fetch(`/api/expenses/${expense.id}`, {
+                            method: 'DELETE',
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error('Failed to delete expense from database');
+                          }
+                        } catch (error) {
+                          console.error('Error deleting expense:', error);
+                          // You could show an error message to the user here
+                        }
+                      }}
                       className="text-gray-400 hover:text-red-600 transition-colors group-hover:opacity-100 opacity-0 md:opacity-100"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

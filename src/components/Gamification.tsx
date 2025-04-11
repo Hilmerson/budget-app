@@ -29,7 +29,7 @@ export function Badge({ name, description, icon, earned }: BadgeProps) {
     <div 
       className={`p-4 rounded-lg flex flex-col items-center text-center transition-all ${
         earned 
-          ? 'bg-gradient-to-br from-blue-50 to-indigo-50 shadow-md' 
+          ? 'bg-gradient-to-br from-blue-50 to-indigo-50 shadow-md cursor-pointer' 
           : 'bg-gray-100 opacity-50'
       }`}
     >
@@ -65,10 +65,12 @@ export function Challenge({ title, description, progress, goal, reward, type }: 
   };
 
   return (
-    <div className={`p-4 rounded-lg ${bgColors[type]} transition-all hover:shadow-md`}>
+    <div className={`p-4 rounded-lg ${bgColors[type]} transition-all hover:shadow-md cursor-pointer`}>
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-bold text-gray-800">{title}</h3>
-        <div className="bg-white px-2 py-1 rounded text-xs font-medium">+{reward} XP</div>
+        <div className="bg-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm text-indigo-700">
+          +{reward} XP
+        </div>
       </div>
       <p className="text-sm text-gray-700 mb-3">{description}</p>
       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -208,7 +210,7 @@ export function Achievements() {
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="flex border-b border-gray-200">
         <button
-          className={`flex-1 py-3 px-4 text-center font-medium ${
+          className={`flex-1 py-3 px-4 text-center font-medium cursor-pointer transition-colors ${
             activeTab === 'badges'
               ? 'text-indigo-600 border-b-2 border-indigo-500'
               : 'text-gray-500 hover:text-gray-700'
@@ -218,7 +220,7 @@ export function Achievements() {
           Badges
         </button>
         <button
-          className={`flex-1 py-3 px-4 text-center font-medium ${
+          className={`flex-1 py-3 px-4 text-center font-medium cursor-pointer transition-colors ${
             activeTab === 'challenges'
               ? 'text-indigo-600 border-b-2 border-indigo-500'
               : 'text-gray-500 hover:text-gray-700'
