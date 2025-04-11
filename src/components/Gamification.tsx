@@ -90,26 +90,44 @@ export function LevelProgress({ level, experience, nextLevelExperience }: LevelP
   
   return (
     <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <div className="text-xl font-bold">Level {level}</div>
           <div className="text-indigo-200 text-sm">Financial Wizard</div>
         </div>
-        <div className="bg-white bg-opacity-20 rounded-full w-12 h-12 flex items-center justify-center">
-          <span className="text-xl font-bold">{level}</span>
+        <div className="bg-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
+          <span className="text-2xl font-bold text-indigo-700">{level}</span>
         </div>
       </div>
       
-      <div className="h-2.5 bg-white bg-opacity-20 rounded-full overflow-hidden mb-1">
+      <div className="relative h-3 bg-indigo-800 bg-opacity-50 rounded-full overflow-hidden mb-2">
+        {/* Background with subtle pattern */}
+        <div className="absolute inset-0 w-full h-full opacity-30">
+          <div className="absolute inset-0 w-full h-full bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]"></div>
+        </div>
+        
+        {/* Actual progress bar */}
         <div 
-          className="h-full bg-white rounded-full"
+          className="relative h-full bg-gradient-to-r from-yellow-300 to-yellow-500 rounded-full transition-all duration-500 ease-out"
           style={{ width: `${percentage}%` }}
-        ></div>
+        >
+          {/* Shine overlay */}
+          <div className="absolute top-0 left-0 right-0 h-1/3 bg-white bg-opacity-30 rounded-t-full"></div>
+        </div>
+        
+        {/* Small dots to mark progress milestones */}
+        <div className="absolute inset-y-0 w-full flex justify-between px-1 pointer-events-none">
+          {[0, 1, 2, 3].map((_, index) => (
+            <div key={index} className="h-full flex items-center">
+              <div className="w-1 h-1 rounded-full bg-white bg-opacity-70"></div>
+            </div>
+          ))}
+        </div>
       </div>
       
-      <div className="flex justify-between text-xs text-indigo-100">
-        <span>{experience} XP</span>
-        <span>{nextLevelExperience} XP</span>
+      <div className="flex justify-between text-sm text-indigo-100">
+        <span className="font-medium">{experience} XP</span>
+        <span>{nextLevelExperience} XP needed for Level {level + 1}</span>
       </div>
     </div>
   );
