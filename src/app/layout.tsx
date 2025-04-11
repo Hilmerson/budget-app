@@ -6,7 +6,7 @@ import Providers from "@/components/Providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BudgetWise - Smart Budgeting Tool",
+  title: "Finny - Smart Budgeting Tool",
   description: "A gamified budgeting tool to help you manage your finances effectively",
 };
 

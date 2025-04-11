@@ -360,8 +360,16 @@ export default function Dashboard() {
         {/* Sidebar */}
         <div className="hidden md:flex w-64 flex-col h-screen bg-white border-r border-indigo-100 pt-6 sticky top-0 transition-all">
           <div className="px-6 mb-8">
-            <h1 className="text-2xl font-bold text-indigo-600">BudgetWise</h1>
-            <p className="text-gray-500 text-sm">Gamified Budgeting</p>
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 7.00018C22 7.00018 19.5 9.50018 17.5 9.50018C15.5 9.50018 14.5 7.50018 12.5 7.50018C10.5 7.50018 9.5 9.00018 7.5 9.00018C5.5 9.00018 2 7.00018 2 7.00018" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 12.0002C22 12.0002 19.5 14.5002 17.5 14.5002C15.5 14.5002 14.5 12.5002 12.5 12.5002C10.5 12.5002 9.5 14.0002 7.5 14.0002C5.5 14.0002 2 12.0002 2 12.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 17.0002C22 17.0002 19.5 19.5002 17.5 19.5002C15.5 19.5002 14.5 17.5002 12.5 17.5002C10.5 17.5002 9.5 19.0002 7.5 19.0002C5.5 19.0002 2 17.0002 2 17.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="17" cy="5" r="2" fill="#4F46E5" />
+              </svg>
+              <h1 className="text-2xl font-bold text-indigo-600">Finny</h1>
+            </div>
+            <p className="text-gray-500 text-sm">Your finances, swimming smoothly</p>
           </div>
           
           <div className="px-4 mb-8">
@@ -414,7 +422,15 @@ export default function Dashboard() {
         <div className="flex-1 p-6">
           {/* Mobile Header */}
           <div className="md:hidden flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-indigo-600">BudgetWise</h1>
+            <div className="flex items-center gap-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 7.00018C22 7.00018 19.5 9.50018 17.5 9.50018C15.5 9.50018 14.5 7.50018 12.5 7.50018C10.5 7.50018 9.5 9.00018 7.5 9.00018C5.5 9.00018 2 7.00018 2 7.00018" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 12.0002C22 12.0002 19.5 14.5002 17.5 14.5002C15.5 14.5002 14.5 12.5002 12.5 12.5002C10.5 12.5002 9.5 14.0002 7.5 14.0002C5.5 14.0002 2 12.0002 2 12.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 17.0002C22 17.0002 19.5 19.5002 17.5 19.5002C15.5 19.5002 14.5 17.5002 12.5 17.5002C10.5 17.5002 9.5 19.0002 7.5 19.0002C5.5 19.0002 2 17.0002 2 17.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="17" cy="5" r="2" fill="#4F46E5" />
+              </svg>
+              <h1 className="text-2xl font-bold text-indigo-600">Finny</h1>
+            </div>
             <button className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

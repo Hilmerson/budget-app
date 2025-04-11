@@ -12,7 +12,7 @@ export function WelcomeIllustration() {
       
       <div className="absolute top-0 left-0 w-full h-full flex items-center">
         <div className="px-8 text-white">
-          <h2 className="text-2xl font-bold">Welcome to BudgetWise</h2>
+          <h2 className="text-2xl font-bold">Welcome to Finny</h2>
           <p className="mt-2 max-w-md">Track your finances, earn rewards, and achieve your financial goals!</p>
         </div>
       </div>

@@ -40,7 +40,7 @@ export default function Login() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-8 max-w-md mx-auto mt-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Sign In to BudgetWise</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Sign In to Finny</h1>
       
       {error && (
         <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4">
