@@ -9,6 +9,13 @@ interface Expense {
   frequency: Frequency;
 }
 
+interface Income {
+  id: string;
+  source: string;
+  amount: number;
+  frequency: Frequency;
+}
+
 interface BudgetState {
   // Basic Info
   employmentMode: 'full-time' | 'contract' | 'other';
@@ -24,13 +31,20 @@ interface BudgetState {
   // Expenses
   expenses: Expense[];
   
+  // Income sources
+  incomes: Income[];
+  totalIncome: number;
+  
   // Actions
   setEmploymentMode: (mode: 'full-time' | 'contract' | 'other') => void;
   setIncome: (amount: number) => void;
+  setTotalIncome: (amount: number) => void;
   setIncomeFrequency: (frequency: Frequency) => void;
   setConfirmed: (confirmed: boolean) => void;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   removeExpense: (id: string) => void;
+  addIncome: (income: Omit<Income, 'id'>) => void;
+  removeIncome: (id: string) => void;
   calculateTaxes: () => void;
 }
 
@@ -73,6 +87,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   taxAmount: 0,
   afterTaxIncome: 0,
   expenses: [],
+  incomes: [],
+  totalIncome: 0,
 
   // Actions
   setEmploymentMode: (mode) => set({ employmentMode: mode }),
@@ -80,6 +96,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     set({ income: amount });
     get().calculateTaxes();
   },
+  setTotalIncome: (amount) => set({ totalIncome: amount }),
   setIncomeFrequency: (frequency) => set({ incomeFrequency: frequency }),
   setConfirmed: (confirmed) => set({ isConfirmed: confirmed }),
   
@@ -93,9 +110,19 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       expenses: state.expenses.filter((expense) => expense.id !== id)
     })),
   
+  addIncome: (income) => 
+    set((state) => ({
+      incomes: [...state.incomes, { ...income, id: Math.random().toString(36).substr(2, 9) }]
+    })),
+  
+  removeIncome: (id) =>
+    set((state) => ({
+      incomes: state.incomes.filter((income) => income.id !== id)
+    })),
+  
   calculateTaxes: () => {
-    const { income, incomeFrequency, employmentMode } = get();
-    const annualIncome = convertToMonthly(income, incomeFrequency) * 12;
+    const { totalIncome, employmentMode } = get();
+    const annualIncome = totalIncome * 12; // Total income is already monthly
     let taxBracket = calculateTaxBracket(annualIncome);
     
     // Adjust tax bracket for different employment modes
@@ -104,7 +131,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     }
     
     const taxAmount = annualIncome * taxBracket;
-    const afterTaxIncome = annualIncome - taxAmount;
+    const afterTaxIncome = totalIncome - (taxAmount / 12); // Monthly after-tax income
     
     set({ taxBracket, taxAmount, afterTaxIncome });
   }
