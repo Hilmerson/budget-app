@@ -3,7 +3,7 @@
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { useState, useEffect } from 'react';
 import { XPGainAnimation } from './Gamification';
-import { useIncomeData } from '@/hooks/useDataFetching';
+import { useIncomeData, invalidateCache } from '@/hooks/useDataFetching';
 
 const incomeCategories = [
   'Salary',
@@ -110,6 +110,10 @@ export default function Income() {
         addExperience(earnedXP);
         setXpAmount(earnedXP);
         setShowXpAnimation(true);
+        
+        // Invalidate the income cache to trigger revalidation
+        invalidateCache('/api/income');
+        
       } catch (error) {
         console.error('Error saving income:', error);
         setIsSubmitting(false); // Enable the form again if there's an error
@@ -147,13 +151,18 @@ export default function Income() {
     }
   };
 
+  // Handle refresh button click
+  const handleRefresh = () => {
+    refetchIncome();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Income Sources</h2>
         {(incomeError || isLoadingIncome) && (
           <button 
-            onClick={refetchIncome}
+            onClick={handleRefresh}
             className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
             disabled={isLoadingIncome}
           >

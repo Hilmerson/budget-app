@@ -18,7 +18,8 @@ export async function GET(request: NextRequest, context: Context) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
     
     const income = await prisma.income.findUnique({
       where: {
@@ -50,7 +51,8 @@ export async function PUT(request: NextRequest, context: Context) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
     const body = await request.json();
     const { source, amount, frequency, description, date } = body;
     
@@ -97,7 +99,8 @@ export async function DELETE(request: NextRequest, context: Context) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
     
     // Check if the income exists and belongs to the user
     const existingIncome = await prisma.income.findUnique({

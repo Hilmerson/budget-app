@@ -3,7 +3,7 @@
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { useState, useEffect } from 'react';
 import { XPGainAnimation } from './Gamification';
-import { useExpenseData } from '@/hooks/useDataFetching';
+import { useExpenseData, invalidateCache } from '@/hooks/useDataFetching';
 
 const expenseCategories = [
   'Housing',
@@ -91,6 +91,10 @@ export default function Expenses() {
         addExperience(earnedXP);
         setXpAmount(earnedXP);
         setShowXpAnimation(true);
+        
+        // Invalidate the expenses cache to trigger revalidation
+        invalidateCache('/api/expenses');
+        
       } catch (error) {
         console.error('Error saving expense:', error);
         setIsSubmitting(false); // Enable the form again if there's an error
@@ -128,13 +132,18 @@ export default function Expenses() {
     }
   };
 
+  // Handle refresh button click
+  const handleRefresh = () => {
+    refetchExpense();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Expenses</h2>
         {(expenseError || isLoadingExpense) && (
           <button 
-            onClick={refetchExpense}
+            onClick={handleRefresh}
             className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
             disabled={isLoadingExpense}
           >

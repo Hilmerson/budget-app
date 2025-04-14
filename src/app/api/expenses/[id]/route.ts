@@ -1,15 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma'; // Use singleton Prisma instance
 
-export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
-) {
+interface Context {
+  params: {
+    id: string;
+  };
+}
+
+export async function DELETE(request: NextRequest, context: Context) {
   try {
     // First validate that params.id exists
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
     if (!id) {
       return NextResponse.json(
         { message: 'Missing expense ID' },
@@ -17,8 +21,8 @@ export async function DELETE(
       );
     }
 
+    // Verify the user is authenticated
     const session = await getServerSession(authOptions);
-
     if (!session || !session.user) {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -26,36 +30,18 @@ export async function DELETE(
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        email: session.user.email as string,
-      },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { message: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get the expense to check ownership
+    // Verify the expense exists and belongs to this user
     const expense = await prisma.expense.findUnique({
-      where: { id },
+      where: {
+        id,
+        userId: session.user.id,
+      },
     });
 
     if (!expense) {
       return NextResponse.json(
-        { message: 'Expense not found' },
+        { message: 'Expense not found or not authorized' },
         { status: 404 }
-      );
-    }
-
-    // Verify the expense belongs to the current user
-    if (expense.userId !== user.id) {
-      return NextResponse.json(
-        { message: 'Not authorized to delete this expense' },
-        { status: 403 }
       );
     }
 
@@ -64,14 +50,120 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json(
-      { message: 'Expense deleted successfully' },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting expense:', error);
     return NextResponse.json(
-      { message: 'Something went wrong' },
+      { message: 'Failed to delete expense' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT handler for updating an expense
+export async function PUT(request: NextRequest, context: Context) {
+  try {
+    // Get and validate expense ID
+    const params = await context.params;
+    const id = params.id;
+    if (!id) {
+      return NextResponse.json(
+        { message: 'Missing expense ID' },
+        { status: 400 }
+      );
+    }
+
+    // Verify user is authenticated
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get request body
+    const body = await request.json();
+    const { category, amount, frequency, description } = body;
+
+    // Verify the expense exists and belongs to this user
+    const expense = await prisma.expense.findUnique({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
+
+    if (!expense) {
+      return NextResponse.json(
+        { message: 'Expense not found or not authorized' },
+        { status: 404 }
+      );
+    }
+
+    // Update the expense
+    const updatedExpense = await prisma.expense.update({
+      where: { id },
+      data: {
+        category: category || expense.category,
+        amount: amount !== undefined ? parseFloat(amount.toString()) : expense.amount,
+        frequency: frequency || expense.frequency,
+        description: description !== undefined ? description : expense.description,
+      },
+    });
+
+    return NextResponse.json(updatedExpense);
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    return NextResponse.json(
+      { message: 'Failed to update expense' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET handler for fetching a single expense
+export async function GET(request: NextRequest, context: Context) {
+  try {
+    // Get and validate expense ID
+    const params = await context.params;
+    const id = params.id;
+    if (!id) {
+      return NextResponse.json(
+        { message: 'Missing expense ID' },
+        { status: 400 }
+      );
+    }
+
+    // Verify user is authenticated
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Fetch the expense
+    const expense = await prisma.expense.findUnique({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+    });
+
+    if (!expense) {
+      return NextResponse.json(
+        { message: 'Expense not found or not authorized' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(expense);
+  } catch (error) {
+    console.error('Error fetching expense:', error);
+    return NextResponse.json(
+      { message: 'Failed to fetch expense' },
       { status: 500 }
     );
   }

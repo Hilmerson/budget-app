@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
+import useSWR, { mutate } from 'swr';
 import { useBudgetStore } from '@/store/useBudgetStore';
 
 // Define type for frequency
@@ -44,39 +45,61 @@ interface ExpenseData {
   updatedAt?: string;
 }
 
-// Generic data fetching hook
-export function useDataFetch<T>(
-  url: string,
-  options?: RequestInit,
-  dependencies: any[] = []
-) {
-  const [data, setData] = useState<T | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch data from ${url}`);
-      }
-      const result = await response.json();
-      setData(result);
-    } catch (err) {
-      console.error(`Error fetching data from ${url}:`, err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setIsLoading(false);
+// Custom fetcher function for SWR
+const fetcher = async (url: string) => {
+  try {
+    console.log(`🔍 SWR: Fetching data from ${url}`);
+    const res = await fetch(url);
+    
+    if (!res.ok) {
+      console.error(`⚠️ Error fetching data from ${url}, status: ${res.status}`);
+      const error = new Error('An error occurred while fetching the data.');
+      error.message = `Failed to fetch: ${res.status} ${res.statusText}`;
+      throw error;
     }
-  }, [url, options]);
+    
+    const data = await res.json();
+    console.log(`✅ SWR: Successfully fetched data from ${url}`);
+    return data;
+  } catch (error) {
+    console.error(`🚨 SWR Fetcher error for ${url}:`, error);
+    throw error;
+  }
+};
 
-  useEffect(() => {
-    fetchData();
-  }, [...dependencies, fetchData]);
+// Generic data fetching hook using SWR
+export function useDataFetch<T>(url: string) {
+  const { data, error, isLoading, isValidating, mutate: refetch } = useSWR<T>(
+    url, 
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateIfStale: true,
+      dedupingInterval: 5000, // Deduplicate requests within 5 seconds
+      errorRetryCount: 3,     // Retry failed requests 3 times
+      focusThrottleInterval: 10000, // Only revalidate once per 10 seconds on focus
+      loadingTimeout: 5000,   // Show slow data fetch warning after 5 seconds
+      onLoadingSlow: () => console.warn(`🐢 Slow loading detected for ${url}`),
+      onSuccess: (data) => console.log(`🎉 SWR success for ${url}, received:`, Array.isArray(data) ? `${data.length} items` : 'data'),
+      onError: (err) => console.error(`💥 SWR error for ${url}:`, err.message),
+    }
+  );
 
-  return { data, isLoading, error, refetch: fetchData };
+  // Combine isLoading and isValidating for a consistent loading state
+  // This ensures components show loading state during initial load AND revalidation
+  const isFetching = isLoading || isValidating;
+
+  return { 
+    data, 
+    isLoading: isFetching, 
+    error: error ? error.message : null, 
+    refetch 
+  };
+}
+
+// Helper function to mutate SWR cache for a specific endpoint
+export function invalidateCache(endpoint: string) {
+  return mutate(endpoint);
 }
 
 // Specific hooks for different data types
@@ -87,11 +110,7 @@ export function useUserData() {
 
 export function useIncomeData() {
   const { setIncomes, dataLoaded, setDataLoaded } = useBudgetStore();
-  const { data, isLoading, error, refetch } = useDataFetch<IncomeData[]>(
-    '/api/income',
-    undefined,
-    [dataLoaded]
-  );
+  const { data, isLoading, error, refetch } = useDataFetch<IncomeData[]>('/api/income');
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -111,11 +130,7 @@ export function useIncomeData() {
 
 export function useExpenseData() {
   const { setExpenses, dataLoaded, setDataLoaded } = useBudgetStore();
-  const { data, isLoading, error, refetch } = useDataFetch<ExpenseData[]>(
-    '/api/expenses',
-    undefined,
-    [dataLoaded]
-  );
+  const { data, isLoading, error, refetch } = useDataFetch<ExpenseData[]>('/api/expenses');
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -139,6 +154,7 @@ export function useExperienceData() {
 
   useEffect(() => {
     if (data && data.experience !== undefined && data.level !== undefined) {
+      console.log(`✅ useExperienceData: Setting experience (${data.experience}) and level (${data.level}) in store`);
       setExperience({
         experience: data.experience,
         level: data.level
