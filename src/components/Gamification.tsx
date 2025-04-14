@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { makeAccessibleButton } from '../utils/accessibility';
 
 interface BadgeProps {
   name: string;
   description: string;
   icon: string;
   earned: boolean;
+  onClick?: () => void;
 }
 
 interface ChallengeProps {
@@ -16,6 +18,7 @@ interface ChallengeProps {
   goal: number;
   reward: number;
   type: 'savings' | 'budget' | 'expense';
+  onClick?: () => void;
 }
 
 interface LevelProgressProps {
@@ -24,7 +27,13 @@ interface LevelProgressProps {
   nextLevelExperience: number;
 }
 
-export function Badge({ name, description, icon, earned }: BadgeProps) {
+export function Badge({ name, description, icon, earned, onClick }: BadgeProps) {
+  // Add accessibility props for earned badges that can be clicked
+  const accessibilityProps = earned && onClick ? {
+    ...makeAccessibleButton(onClick),
+    'aria-label': `Badge: ${name} - ${description}`,
+  } : {};
+
   return (
     <div 
       className={`p-4 rounded-lg flex flex-col items-center text-center transition-all ${
@@ -32,6 +41,7 @@ export function Badge({ name, description, icon, earned }: BadgeProps) {
           ? 'bg-gradient-to-br from-blue-50 to-indigo-50 shadow-md cursor-pointer' 
           : 'bg-gray-100 opacity-50'
       }`}
+      {...accessibilityProps}
     >
       <div 
         className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
@@ -39,17 +49,18 @@ export function Badge({ name, description, icon, earned }: BadgeProps) {
             ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white' 
             : 'bg-gray-300 text-gray-500'
         }`}
+        aria-hidden="true"
       >
         <span className="text-2xl">{icon}</span>
       </div>
       <h3 className="font-bold text-gray-800">{name}</h3>
       <p className="text-xs text-gray-600 mt-1">{description}</p>
-      {!earned && <div className="text-xs mt-2 text-gray-500">Locked</div>}
+      {!earned && <div className="text-xs mt-2 text-gray-500" aria-live="polite">Locked</div>}
     </div>
   );
 }
 
-export function Challenge({ title, description, progress, goal, reward, type }: ChallengeProps) {
+export function Challenge({ title, description, progress, goal, reward, type, onClick }: ChallengeProps) {
   const percentage = Math.min(Math.floor((progress / goal) * 100), 100);
   
   const gradientColors = {
@@ -64,16 +75,25 @@ export function Challenge({ title, description, progress, goal, reward, type }: 
     expense: 'bg-amber-100'
   };
 
+  // Add accessibility props for challenge interaction
+  const accessibilityProps = onClick ? {
+    ...makeAccessibleButton(onClick),
+    'aria-label': `Challenge: ${title}`,
+  } : {};
+
   return (
-    <div className={`p-4 rounded-lg ${bgColors[type]} transition-all hover:shadow-md cursor-pointer`}>
+    <div 
+      className={`p-4 rounded-lg ${bgColors[type]} transition-all hover:shadow-md cursor-pointer`}
+      {...accessibilityProps}
+    >
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-bold text-gray-800">{title}</h3>
-        <div className="bg-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm text-indigo-700">
+        <div className="bg-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm text-indigo-700" aria-label={`Reward: ${reward} XP`}>
           +{reward} XP
         </div>
       </div>
       <p className="text-sm text-gray-700 mb-3">{description}</p>
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden" role="progressbar" aria-valuenow={percentage} aria-valuemin={0} aria-valuemax={100}>
         <div 
           className={`h-full rounded-full bg-gradient-to-r ${gradientColors[type]}`} 
           style={{ width: `${percentage}%` }}
@@ -102,7 +122,12 @@ export function LevelProgress({ level, experience, nextLevelExperience }: LevelP
         </div>
       </div>
       
-      <div className="relative h-3 bg-indigo-800 bg-opacity-50 rounded-full overflow-hidden mb-2">
+      <div className="relative h-3 bg-indigo-800 bg-opacity-50 rounded-full overflow-hidden mb-2" 
+        role="progressbar" 
+        aria-valuenow={percentage} 
+        aria-valuemin={0} 
+        aria-valuemax={100} 
+        aria-label={`Level progress: ${percentage}%`}>
         {/* Background with subtle pattern */}
         <div className="absolute inset-0 w-full h-full opacity-30">
           <div className="absolute inset-0 w-full h-full bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:8px_8px]"></div>
@@ -144,12 +169,12 @@ export function StreakTracker({ currentStreak }: { currentStreak: number }) {
     <div className="p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-bold text-gray-800">Your Budget Streak</h3>
-        <div className="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
-          <span className="mr-1">🔥</span> {currentStreak} days
+        <div className="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center" aria-label={`Current streak: ${currentStreak} days`}>
+          <span className="mr-1" aria-hidden="true">🔥</span> {currentStreak} days
         </div>
       </div>
       
-      <div className="flex justify-between">
+      <div className="flex justify-between" role="group" aria-label="Days of the week activity">
         {days.map((day, index) => (
           <div key={day} className="flex flex-col items-center">
             <div className="text-xs text-gray-500 mb-2">{day}</div>
@@ -159,6 +184,7 @@ export function StreakTracker({ currentStreak }: { currentStreak: number }) {
                   ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white' 
                   : 'bg-gray-100 text-gray-400'
               }`}
+              aria-label={`${day}: ${activeDays.includes(index) ? 'Active' : 'Inactive'}`}
             >
               {activeDays.includes(index) ? '✓' : ''}
             </div>
@@ -208,7 +234,7 @@ export function Achievements() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200" role="tablist">
         <button
           className={`flex-1 py-3 px-4 text-center font-medium cursor-pointer transition-colors ${
             activeTab === 'badges'
@@ -216,6 +242,10 @@ export function Achievements() {
               : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setActiveTab('badges')}
+          role="tab"
+          aria-selected={activeTab === 'badges'}
+          aria-controls="badges-panel"
+          id="badges-tab"
         >
           Badges
         </button>
@@ -226,6 +256,10 @@ export function Achievements() {
               : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setActiveTab('challenges')}
+          role="tab"
+          aria-selected={activeTab === 'challenges'}
+          aria-controls="challenges-panel"
+          id="challenges-tab"
         >
           Challenges
         </button>
@@ -233,15 +267,25 @@ export function Achievements() {
       
       <div className="p-4">
         {activeTab === 'badges' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div 
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4" 
+            role="tabpanel"
+            id="badges-panel"
+            aria-labelledby="badges-tab"
+          >
             {badges.map((badge) => (
-              <Badge key={badge.name} {...badge} />
+              <Badge key={badge.name} {...badge} onClick={() => badge.earned ? console.log(`Clicked on ${badge.name}`) : null} />
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div 
+            className="space-y-4"
+            role="tabpanel"
+            id="challenges-panel"
+            aria-labelledby="challenges-tab"
+          >
             {challenges.map((challenge) => (
-              <Challenge key={challenge.title} {...challenge} />
+              <Challenge key={challenge.title} {...challenge} onClick={() => console.log(`Clicked on ${challenge.title}`)} />
             ))}
           </div>
         )}
@@ -268,12 +312,13 @@ export function XPGainAnimation({ amount, isVisible, onAnimationComplete }: {
   if (!isVisible) return null;
   
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none" aria-live="polite" aria-atomic="true">
       <div 
         className="animate-bounce-up-fade-out bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-xl"
         style={{
           animation: 'bounce-up-fade-out 2s ease-out forwards',
         }}
+        aria-label={`Gained ${amount} experience points`}
       >
         +{amount} XP
       </div>
@@ -301,4 +346,4 @@ export function XPGainAnimation({ amount, isVisible, onAnimationComplete }: {
       `}</style>
     </div>
   );
-} 
+}
