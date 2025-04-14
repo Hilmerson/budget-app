@@ -47,6 +47,11 @@ interface GamificationState {
   nextLevelExperience: number;
   streak: number;
   healthScore: number;
+  xpGainAnimation: {
+    isVisible: boolean;
+    amount: number;
+    isLevelUp: boolean;
+  };
 }
 
 // Main state interface
@@ -96,6 +101,8 @@ export interface BudgetState {
   updateGamification: () => void;
   setStreak: (streak: number) => void;
   setHealthScore: (score: number) => void;
+  showXPGainAnimation: (amount: number, isLevelUp?: boolean) => void;
+  hideXPGainAnimation: () => void;
   
   // Data loading
   setDataLoaded: (loaded: boolean) => void;
@@ -206,7 +213,12 @@ export const useBudgetStore = create<BudgetState>()(
         experience: 0,
         nextLevelExperience: 100,
         streak: 0,
-        healthScore: 50
+        healthScore: 50,
+        xpGainAnimation: {
+          isVisible: false,
+          amount: 0,
+          isLevelUp: false
+        }
       },
 
       // Core data actions
@@ -349,6 +361,19 @@ export const useBudgetStore = create<BudgetState>()(
       
       // Gamification methods
       addExperience: (amount) => {
+        // Get current state first to determine if this will trigger a level up
+        const currentState = get();
+        const currentLevel = currentState.gamification.level;
+        const currentExp = currentState.gamification.experience;
+        const newExperience = currentExp + amount;
+        const newLevelInfo = getLevelInfo(newExperience);
+        
+        // Check if this will trigger a level up
+        const willLevelUp = newLevelInfo.level > currentLevel;
+        
+        // Show appropriate animation
+        get().showXPGainAnimation(amount, willLevelUp);
+        
         set((state) => {
           const currentExp = state.gamification.experience;
           const currentLevel = state.gamification.level;
@@ -509,6 +534,33 @@ export const useBudgetStore = create<BudgetState>()(
       // Data loading
       setDataLoaded: (loaded) => {
         set({ dataLoaded: loaded });
+      },
+      
+      // Gamification methods
+      showXPGainAnimation: (amount, isLevelUp = false) => {
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            xpGainAnimation: {
+              isVisible: true,
+              amount,
+              isLevelUp
+            }
+          }
+        }));
+      },
+      
+      hideXPGainAnimation: () => {
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            xpGainAnimation: {
+              isVisible: false,
+              amount: 0,
+              isLevelUp: false
+            }
+          }
+        }));
       }
     }),
     {

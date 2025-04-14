@@ -14,7 +14,8 @@ import {
   LevelProgress,
   StreakTracker,
   Achievements,
-  Challenge
+  Challenge,
+  XPGainAnimation
 } from './Gamification';
 import Income from './Income';
 import Expenses from './Expenses';
@@ -33,15 +34,23 @@ interface Expense {
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  
+  // Extract store values with a fallback for xpGainAnimation
+  const store = useBudgetStore();
+  const level = store.gamification.level;
+  const experience = store.gamification.experience;
+  const nextLevelExperience = store.gamification.nextLevelExperience;
+  const xpGainAnimation = store.gamification.xpGainAnimation || { isVisible: false, amount: 0 };
+  
   const {
-    gamification: { level, experience, nextLevelExperience },
     calculations: { afterTaxIncome },
     expenses,
     addExperience,
     updateCalculations,
     dataLoaded,
-    setDataLoaded
-  } = useBudgetStore();
+    setDataLoaded,
+    hideXPGainAnimation
+  } = store;
 
   const [incomeFrequency, setIncomeFrequency] = useState<Frequency>('monthly');
   const [employmentMode, setEmploymentMode] = useState<'full-time' | 'contract' | 'other'>('full-time');
@@ -167,6 +176,16 @@ export default function Dashboard() {
         return (
           <div className="space-y-6">
             <h1 className="text-3xl font-bold">Welcome, {session?.user?.name || 'User'}!</h1>
+            
+            {/* Debug button for testing XP animation - can be removed in production */}
+            <button 
+              onClick={() => addExperience(25)} 
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm"
+              aria-label="Add test XP"
+            >
+              Gain +25 XP (Test)
+            </button>
+            
             <FinancialHealthCard score={healthScore} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <BudgetComparisonCard categories={[
@@ -241,6 +260,14 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="flex flex-col md:flex-row">
+        {/* XP Gain Animation - positioned above everything else */}
+        <XPGainAnimation 
+          amount={xpGainAnimation.amount}
+          isVisible={xpGainAnimation.isVisible}
+          isLevelUp={xpGainAnimation.isLevelUp}
+          onAnimationComplete={hideXPGainAnimation}
+        />
+        
         {/* Sidebar */}
         <div className="w-full md:w-64 bg-white md:fixed md:h-screen shadow-sm flex flex-col md:overflow-y-auto">
           <div className="p-4 flex flex-col border-b border-gray-200">

@@ -300,36 +300,138 @@ export function Achievements() {
   );
 }
 
-export function XPGainAnimation({ amount, isVisible, onAnimationComplete }: { 
+export function XPGainAnimation({ amount, isVisible, onAnimationComplete, isLevelUp }: { 
   amount: number; 
   isVisible: boolean;
   onAnimationComplete: () => void;
+  isLevelUp?: boolean;
 }) {
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
         onAnimationComplete();
-      }, 2000); // Animation lasts 2 seconds
+      }, isLevelUp ? 3000 : 2000); // Animation lasts longer for level up
       
       return () => clearTimeout(timer);
     }
-  }, [isVisible, onAnimationComplete]);
+  }, [isVisible, onAnimationComplete, isLevelUp]);
   
   if (!isVisible) return null;
   
+  // Special animation for level up
+  if (isLevelUp) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none" aria-live="polite" aria-atomic="true">
+        {/* Darkened overlay */}
+        <div className="fixed inset-0 bg-black bg-opacity-40 pointer-events-none"></div>
+        
+        {/* Level up message */}
+        <div 
+          className="animate-scale-in bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-8 py-6 rounded-xl shadow-xl font-bold text-2xl flex flex-col items-center"
+          style={{
+            animation: 'scale-in-out 3s ease-out forwards',
+          }}
+          aria-label="Level up!"
+        >
+          <div className="text-4xl mb-2">🎊 LEVEL UP! 🎊</div>
+          <div className="flex items-center justify-center">
+            <span className="text-3xl mr-2">+{amount} XP</span>
+          </div>
+        </div>
+        
+        {/* Celebratory particles */}
+        <div className="fixed inset-0 pointer-events-none">
+          {Array.from({ length: 50 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-3 h-3 rounded-full"
+              style={{
+                backgroundColor: ['#FFD700', '#FFA500', '#FF4500', '#FF6347', '#4169E1'][i % 5],
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `celebration-particle 2.${i % 5}s ease-out forwards ${i * 0.05}s`,
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Add keyframes for level up animation */}
+        <style jsx global>{`
+          @keyframes scale-in-out {
+            0% {
+              opacity: 0;
+              transform: scale(0.5);
+            }
+            20% {
+              opacity: 1;
+              transform: scale(1.2);
+            }
+            30% {
+              transform: scale(1);
+            }
+            70% {
+              opacity: 1;
+              transform: scale(1.05);
+            }
+            100% {
+              opacity: 0;
+              transform: scale(1.5);
+            }
+          }
+          
+          @keyframes celebration-particle {
+            0% {
+              opacity: 0;
+              transform: scale(0) translate(0, 0);
+            }
+            10% {
+              opacity: 1;
+              transform: scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: scale(0.5) translate(
+                ${Math.random() * 200 - 100}px,
+                ${Math.random() * 200 - 100}px
+              );
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
+  
+  // Regular XP gain animation
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none" aria-live="polite" aria-atomic="true">
       <div 
-        className="animate-bounce-up-fade-out bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-xl"
+        className="animate-bounce-up-fade-out bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-xl flex items-center"
         style={{
           animation: 'bounce-up-fade-out 2s ease-out forwards',
         }}
         aria-label={`Gained ${amount} experience points`}
       >
+        <span className="mr-2 text-yellow-300">✨</span>
         +{amount} XP
+        <span className="ml-2 text-yellow-300">✨</span>
       </div>
       
-      {/* Add keyframes for the animation */}
+      {/* Small floating particles for extra flair */}
+      <div className="fixed inset-0 pointer-events-none">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-3 h-3 bg-yellow-300 rounded-full opacity-80"
+            style={{
+              left: `${Math.random() * 80 + 10}%`,
+              top: `${Math.random() * 80 + 10}%`,
+              animation: `particle-fade-out 1.${5 + i % 5}s ease-out forwards ${i * 0.1}s`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Add keyframes for the animations */}
       <style jsx global>{`
         @keyframes bounce-up-fade-out {
           0% {
@@ -347,6 +449,21 @@ export function XPGainAnimation({ amount, isVisible, onAnimationComplete }: {
           100% {
             opacity: 0;
             transform: scale(0.8) translateY(-50px);
+          }
+        }
+        
+        @keyframes particle-fade-out {
+          0% {
+            opacity: 0.8;
+            transform: scale(0) rotate(0deg);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1) rotate(180deg);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0) rotate(360deg);
           }
         }
       `}</style>
