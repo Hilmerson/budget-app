@@ -111,7 +111,7 @@ export function LevelProgress({ level, experience, nextLevelExperience }: LevelP
   const percentage = Math.floor((experience / nextLevelExperience) * 100);
   
   return (
-    <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+    <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
       <div className="flex justify-between items-center mb-4">
         <div>
           <div className="text-xl font-bold">Level {level}</div>
@@ -152,9 +152,15 @@ export function LevelProgress({ level, experience, nextLevelExperience }: LevelP
         </div>
       </div>
       
-      <div className="flex justify-between text-sm text-indigo-100">
-        <span className="font-medium">{experience} XP</span>
-        <span>{nextLevelExperience} XP needed for Level {level + 1}</span>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center">
+          <span className="text-sm font-bold text-yellow-300">{experience}</span>
+          <span className="text-xs text-indigo-200 mx-1">/</span>
+          <span className="text-xs text-indigo-200">{nextLevelExperience}</span>
+        </div>
+        <div className="bg-indigo-800 bg-opacity-50 px-2 py-0.5 rounded text-xs font-medium text-indigo-100">
+          {percentage}% to Level {level + 1}
+        </div>
       </div>
     </div>
   );
