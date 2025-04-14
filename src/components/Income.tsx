@@ -4,6 +4,8 @@ import { useBudgetStore } from '@/store/useBudgetStore';
 import { useState, useEffect } from 'react';
 import { XPGainAnimation } from './Gamification';
 import { useIncomeData, invalidateCache } from '@/hooks/useDataFetching';
+import { Card, Button, Input, Select } from '@/components/ui';
+import type { SelectOption } from '@/components/ui';
 
 const incomeCategories = [
   'Salary',
@@ -34,7 +36,8 @@ export default function Income() {
   const [newIncome, setNewIncome] = useState({
     source: '',
     amount: 0,
-    frequency: 'monthly' as Frequency
+    frequency: 'monthly' as Frequency,
+    description: ''
   });
   
   // Animation and loading states
@@ -83,7 +86,7 @@ export default function Income() {
             source: newIncome.source,
             amount: newIncome.amount,
             frequency: newIncome.frequency,
-            description: '',
+            description: newIncome.description,
             date: new Date().toISOString(),
           }),
         });
@@ -104,7 +107,7 @@ export default function Income() {
         const earnedXP = Math.min(baseXP + amountFactor, 30); // Cap at 30 XP
         
         // Reset form
-        setNewIncome({ source: '', amount: 0, frequency: 'monthly' });
+        setNewIncome({ source: '', amount: 0, frequency: 'monthly', description: '' });
         
         // Add XP and show animation
         addExperience(earnedXP);
@@ -151,6 +154,21 @@ export default function Income() {
     }
   };
 
+  // Create select options
+  const sourceOptions: SelectOption[] = [
+    { value: '', label: 'Select Source' },
+    ...incomeCategories.map(category => ({ value: category, label: category }))
+  ];
+
+  const frequencyOptions: SelectOption[] = [
+    { value: 'one-time', label: 'One-time Payment' },
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'bi-weekly', label: 'Bi-weekly' },
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'quarterly', label: 'Quarterly' },
+    { value: 'yearly', label: 'Yearly' }
+  ];
+
   // Handle refresh button click
   const handleRefresh = () => {
     refetchIncome();
@@ -161,20 +179,25 @@ export default function Income() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Income Sources</h2>
         {(incomeError || isLoadingIncome) && (
-          <button 
+          <Button 
             onClick={handleRefresh}
-            className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
             disabled={isLoadingIncome}
+            variant="secondary"
+            size="sm"
+            isLoading={isLoadingIncome}
           >
             {isLoadingIncome ? 'Refreshing...' : 'Refresh Data'}
-          </button>
+          </Button>
         )}
       </div>
       
       {incomeError && <p className="text-red-500 text-sm">{incomeError}</p>}
       
       {/* Header with illustration */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+      <Card 
+        className="mb-6"
+        variant="elevated"
+      >
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-indigo-800 mb-2">Income Management</h2>
@@ -192,78 +215,62 @@ export default function Income() {
             </div>
           </div>
         </div>
-      </div>
+      </Card>
       
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Add Income Form */}
         <div className="md:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold text-indigo-900 mb-4">Add Income Source</h3>
+          <Card 
+            title="Add Income Source" 
+            variant="elevated"
+          >
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Income Source</label>
-                <select
-                  value={newIncome.source}
-                  onChange={(e) => setNewIncome({ ...newIncome, source: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-200"
-                >
-                  <option value="">Select Source</option>
-                  {incomeCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Income Source"
+                value={newIncome.source}
+                onChange={(e) => setNewIncome({ ...newIncome, source: e.target.value })}
+                options={sourceOptions}
+                required
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 text-lg">$</span>
-                  </div>
-                  <input
-                    type="number"
-                    value={newIncome.amount || ''}
-                    onChange={(e) => setNewIncome({ ...newIncome, amount: Number(e.target.value) })}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-gray-700 transition duration-200"
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
+              <Input
+                label="Amount"
+                type="number"
+                value={newIncome.amount || ''}
+                onChange={(e) => setNewIncome({ ...newIncome, amount: Number(e.target.value) })}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+                startIcon={<span className="text-gray-500 text-lg">$</span>}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                <select
-                  value={newIncome.frequency}
-                  onChange={(e) => setNewIncome({ ...newIncome, frequency: e.target.value as Frequency })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-200"
-                >
-                  <option value="one-time">One-time Payment</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="bi-weekly">Bi-weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-              </div>
+              <Select
+                label="Frequency"
+                value={newIncome.frequency}
+                onChange={(e) => setNewIncome({ ...newIncome, frequency: e.target.value as Frequency })}
+                options={frequencyOptions}
+              />
 
-              <button
+              <Input
+                label="Description (Optional)"
+                type="text"
+                value={newIncome.description}
+                onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
+                placeholder="Add details about this income"
+              />
+
+              <Button
                 onClick={handleAddIncome}
                 disabled={!newIncome.source || !newIncome.amount || isSubmitting}
-                className={`w-full py-3 px-4 font-semibold rounded-lg transition-all duration-200 ${
-                  newIncome.source && newIncome.amount && !isSubmitting
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                isLoading={isSubmitting}
+                fullWidth
               >
                 {isSubmitting ? 'Adding...' : 'Add Income Source'}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Income List */}
@@ -315,6 +322,11 @@ export default function Income() {
                             ${calculateMonthlyAmount(income).toLocaleString()}/mo
                           </span>
                         </div>
+                        {income.description && (
+                          <p className="text-gray-500 text-sm mt-1 italic">
+                            {income.description}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <button
