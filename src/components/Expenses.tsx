@@ -3,6 +3,7 @@
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { useState, useEffect } from 'react';
 import { XPGainAnimation } from './Gamification';
+import { useExpenseData } from '@/hooks/useDataFetching';
 
 const expenseCategories = [
   'Housing',
@@ -20,7 +21,9 @@ const expenseCategories = [
 type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export default function Expenses() {
-  const { expenses, addExpense, removeExpense, afterTaxIncome, addExperience, setExpenses, dataLoaded, setDataLoaded } = useBudgetStore();
+  const { expenses, addExpense, removeExpense, afterTaxIncome, addExperience } = useBudgetStore();
+  const { isLoadingExpense, expenseError, refetchExpense } = useExpenseData();
+
   const [newExpense, setNewExpense] = useState({
     category: '',
     amount: 0,
@@ -31,63 +34,6 @@ export default function Expenses() {
   const [showXpAnimation, setShowXpAnimation] = useState(false);
   const [xpAmount, setXpAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // Fetch expenses from the database on component mount only if not already loaded
-  useEffect(() => {
-    async function fetchExpenses() {
-      // Skip fetching if we already have data
-      if (dataLoaded && expenses.length > 0) {
-        console.log("⏭️ Expenses: Data already loaded, skipping fetch");
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        setIsLoading(true);
-        console.log("🔍 Expenses: Fetching expense data...");
-        const response = await fetch('/api/expenses');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch expenses');
-        }
-        
-        const expensesData = await response.json();
-        console.log("📥 Expenses: Received expense data:", expensesData);
-        
-        if (Array.isArray(expensesData) && expensesData.length > 0) {
-          // Update the Zustand store with the fetched expenses
-          setExpenses(expensesData);
-          console.log(`✅ Expenses: Expense data set in store: ${expensesData.length} records`);
-          
-          // Log each expense record for debugging
-          expensesData.forEach((expense, index) => {
-            console.log(`Expense #${index+1}:`, { 
-              id: expense.id, 
-              userId: expense.userId,
-              category: expense.category,
-              amount: expense.amount,
-              frequency: expense.frequency,
-              date: expense.date || expense.createdAt || 'No date'
-            });
-          });
-        } else {
-          console.log("⚠️ Expenses: No expense data received or empty array");
-          // Still mark as loaded even if no data
-          setDataLoaded(true);
-        }
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('❌ Expenses: Error fetching expenses:', error);
-        setError('Failed to load expenses. Please refresh the page.');
-        setIsLoading(false);
-      }
-    }
-    
-    fetchExpenses();
-  }, [setExpenses, dataLoaded, expenses.length, setDataLoaded]);
 
   const totalExpenses = expenses.reduce((sum, expense) => {
     let monthlyAmount = expense.amount;
@@ -182,56 +128,22 @@ export default function Expenses() {
     }
   };
 
-  // Function to manually refresh data
-  const handleRefreshData = async () => {
-    console.log("🔄 Expenses: Manual refresh requested");
-    setDataLoaded(false); // Reset the data loaded flag
-    setIsLoading(true);
-    
-    try {
-      console.log("🔍 Expenses: Manually fetching expense data...");
-      const response = await fetch('/api/expenses');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch expenses');
-      }
-      
-      const expensesData = await response.json();
-      console.log("📥 Expenses: Manual refresh received expense data:", expensesData);
-      
-      if (Array.isArray(expensesData)) {
-        // Update the Zustand store with the fetched expenses
-        setExpenses(expensesData);
-        console.log(`✅ Expenses: Manual refresh set ${expensesData.length} expenses in store`);
-        setError(""); // Clear any previous errors
-      } else {
-        console.log("⚠️ Expenses: Manual refresh - No expense data received or empty array");
-        setError("No expense data available. Try adding some expenses.");
-      }
-    } catch (error) {
-      console.error('❌ Expenses: Error in manual refresh:', error);
-      setError('Failed to refresh expense data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Expenses</h2>
-        {(error || isLoading) && (
+        <h2 className="text-2xl font-bold text-gray-800">Expenses</h2>
+        {(expenseError || isLoadingExpense) && (
           <button 
-            onClick={handleRefreshData}
+            onClick={refetchExpense}
             className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-            disabled={isLoading}
+            disabled={isLoadingExpense}
           >
-            {isLoading ? 'Refreshing...' : 'Refresh Data'}
+            {isLoadingExpense ? 'Refreshing...' : 'Refresh Data'}
           </button>
         )}
       </div>
       
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {expenseError && <p className="text-red-500 text-sm">{expenseError}</p>}
       
       {/* Header with illustration */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -331,17 +243,17 @@ export default function Expenses() {
           <div className="bg-white rounded-xl shadow-sm p-6 h-full">
             <h3 className="text-xl font-semibold text-indigo-900 mb-4">Your Expenses</h3>
             
-            {isLoading ? (
+            {isLoadingExpense ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-gray-50 rounded-lg h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
                 <p className="text-gray-600">Loading your expense data...</p>
               </div>
-            ) : error ? (
+            ) : expenseError ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-red-50 rounded-lg h-64">
                 <svg className="w-16 h-16 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
-                <h4 className="text-lg font-medium text-red-600">{error}</h4>
+                <h4 className="text-lg font-medium text-red-600">{expenseError}</h4>
               </div>
             ) : expenses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-gray-50 rounded-lg h-64">
@@ -431,26 +343,6 @@ export default function Expenses() {
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Debug Info - Collapsible Section */}
-                <div className="mt-6">
-                  <details className="text-xs bg-gray-100 p-3 rounded-lg">
-                    <summary className="font-semibold cursor-pointer text-gray-600">Debug Information</summary>
-                    <div className="mt-2 overflow-auto max-h-96">
-                      <h4 className="font-semibold mb-1">Raw Expense Data:</h4>
-                      <pre className="text-xs bg-gray-800 text-green-400 p-2 rounded overflow-auto">
-                        {JSON.stringify(expenses.map(exp => ({
-                          id: exp.id,
-                          userId: exp.userId,
-                          category: exp.category,
-                          amount: exp.amount,
-                          frequency: exp.frequency,
-                          date: exp.date
-                        })), null, 2)}
-                      </pre>
-                    </div>
-                  </details>
                 </div>
               </>
             )}

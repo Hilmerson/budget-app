@@ -3,6 +3,7 @@
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { useState, useEffect } from 'react';
 import { XPGainAnimation } from './Gamification';
+import { useIncomeData } from '@/hooks/useDataFetching';
 
 const incomeCategories = [
   'Salary',
@@ -27,7 +28,9 @@ interface IncomeWithMonthly {
 }
 
 export default function Income() {
-  const { incomes, addIncome, removeIncome, setTotalIncome, employmentMode, addExperience, setIncomes, dataLoaded, setDataLoaded } = useBudgetStore();
+  const { incomes, addIncome, removeIncome, setTotalIncome, employmentMode, addExperience } = useBudgetStore();
+  const { isLoadingIncome, incomeError, refetchIncome } = useIncomeData();
+  
   const [newIncome, setNewIncome] = useState({
     source: '',
     amount: 0,
@@ -38,63 +41,6 @@ export default function Income() {
   const [showXpAnimation, setShowXpAnimation] = useState(false);
   const [xpAmount, setXpAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // Fetch incomes from the database on component mount only if not already loaded
-  useEffect(() => {
-    async function fetchIncomes() {
-      // Skip fetching if we already have data
-      if (dataLoaded && incomes.length > 0) {
-        console.log("⏭️ Income: Data already loaded, skipping fetch");
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        setIsLoading(true);
-        console.log("🔍 Income: Fetching income data...");
-        const response = await fetch('/api/income');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch income sources');
-        }
-        
-        const incomesData = await response.json();
-        console.log("📥 Income: Received income data:", incomesData);
-        
-        if (Array.isArray(incomesData) && incomesData.length > 0) {
-          // Update the Zustand store with the fetched incomes
-          setIncomes(incomesData);
-          console.log(`✅ Income: Income data set in store: ${incomesData.length} records`);
-          
-          // Log each income record for debugging
-          incomesData.forEach((income, index) => {
-            console.log(`Income #${index+1}:`, { 
-              id: income.id, 
-              userId: income.userId,
-              source: income.source,
-              amount: income.amount,
-              frequency: income.frequency,
-              date: income.date || 'No date'
-            });
-          });
-        } else {
-          console.log("⚠️ Income: No income data received or empty array");
-          // Still mark as loaded even if no data
-          setDataLoaded(true);
-        }
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('❌ Income: Error fetching incomes:', error);
-        setError('Failed to load income sources. Please refresh the page.');
-        setIsLoading(false);
-      }
-    }
-    
-    fetchIncomes();
-  }, [setIncomes, dataLoaded, incomes.length, setDataLoaded]);
 
   // Convert all incomes to monthly for comparison
   const monthlyIncomes = incomes.map(income => {
@@ -199,56 +145,22 @@ export default function Income() {
     }
   };
 
-  // Function to manually refresh data
-  const handleRefreshData = async () => {
-    console.log("🔄 Income: Manual refresh requested");
-    setDataLoaded(false); // Reset the data loaded flag
-    setIsLoading(true);
-    
-    try {
-      console.log("🔍 Income: Manually fetching income data...");
-      const response = await fetch('/api/income');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch income sources');
-      }
-      
-      const incomesData = await response.json();
-      console.log("📥 Income: Manual refresh received income data:", incomesData);
-      
-      if (Array.isArray(incomesData)) {
-        // Update the Zustand store with the fetched incomes
-        setIncomes(incomesData);
-        console.log(`✅ Income: Manual refresh set ${incomesData.length} incomes in store`);
-        setError(""); // Clear any previous errors
-      } else {
-        console.log("⚠️ Income: Manual refresh - No income data received or empty array");
-        setError("No income data available. Try adding some income sources.");
-      }
-    } catch (error) {
-      console.error('❌ Income: Error in manual refresh:', error);
-      setError('Failed to refresh income data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Income Sources</h2>
-        {(error || isLoading) && (
+        <h2 className="text-2xl font-bold text-gray-800">Income Sources</h2>
+        {(incomeError || isLoadingIncome) && (
           <button 
-            onClick={handleRefreshData}
+            onClick={refetchIncome}
             className="text-sm px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-            disabled={isLoading}
+            disabled={isLoadingIncome}
           >
-            {isLoading ? 'Refreshing...' : 'Refresh Data'}
+            {isLoadingIncome ? 'Refreshing...' : 'Refresh Data'}
           </button>
         )}
       </div>
       
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {incomeError && <p className="text-red-500 text-sm">{incomeError}</p>}
       
       {/* Header with illustration */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -348,17 +260,17 @@ export default function Income() {
           <div className="bg-white rounded-xl shadow-sm p-6 h-full">
             <h3 className="text-xl font-semibold text-indigo-900 mb-4">Your Income Sources</h3>
             
-            {isLoading ? (
+            {isLoadingIncome ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-gray-50 rounded-lg h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
                 <p className="text-gray-600">Loading your income data...</p>
               </div>
-            ) : error ? (
+            ) : incomeError ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-red-50 rounded-lg h-64">
                 <svg className="w-16 h-16 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
-                <h4 className="text-lg font-medium text-red-600">{error}</h4>
+                <h4 className="text-lg font-medium text-red-600">{incomeError}</h4>
               </div>
             ) : incomes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-gray-50 rounded-lg h-64">
@@ -446,26 +358,6 @@ export default function Income() {
                       <div className="text-2xl font-bold text-indigo-700 capitalize">{employmentMode.replace('-', ' ')}</div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Debug Info - Collapsible Section */}
-                <div className="mt-6">
-                  <details className="text-xs bg-gray-100 p-3 rounded-lg">
-                    <summary className="font-semibold cursor-pointer text-gray-600">Debug Information</summary>
-                    <div className="mt-2 overflow-auto max-h-96">
-                      <h4 className="font-semibold mb-1">Raw Income Data:</h4>
-                      <pre className="text-xs bg-gray-800 text-green-400 p-2 rounded overflow-auto">
-                        {JSON.stringify(incomes.map(inc => ({
-                          id: inc.id,
-                          userId: inc.userId,
-                          source: inc.source,
-                          amount: inc.amount,
-                          frequency: inc.frequency,
-                          date: inc.date
-                        })), null, 2)}
-                      </pre>
-                    </div>
-                  </details>
                 </div>
               </>
             )}

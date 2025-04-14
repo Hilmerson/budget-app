@@ -18,6 +18,7 @@ import {
 } from './Gamification';
 import Income from './Income';
 import Expenses from './Expenses';
+import { useDashboardData } from '@/hooks/useDataFetching';
 
 type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
 
@@ -32,40 +33,29 @@ interface Expense {
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { 
-    addIncome, 
-    clearIncomes, 
-    addExpense, 
-    clearExpenses, 
-    setIncomes: updateStoreIncomes, 
-    setExpenses: updateStoreExpenses,
+  const {
     level,
     experience,
     nextLevelExperience,
+    afterTaxIncome,
+    expenses,
     addExperience,
-    setExperience,
+    calculateTaxes,
     dataLoaded,
     setDataLoaded
   } = useBudgetStore();
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [income, setIncome] = useState(0);
   const [incomeFrequency, setIncomeFrequency] = useState<Frequency>('monthly');
   const [employmentMode, setEmploymentMode] = useState<'full-time' | 'contract' | 'other'>('full-time');
-  const [newExpense, setNewExpense] = useState({
-    category: '',
-    amount: 0,
-    frequency: 'monthly' as Frequency,
-    description: ''
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [activeSidebarItem, setActiveSidebarItem] = useState('dashboard');
 
-  // Tax calculation variables
-  const [taxBracket, setTaxBracket] = useState(0);
-  const [taxAmount, setTaxAmount] = useState(0);
-  const [afterTaxIncome, setAfterTaxIncome] = useState(0);
+  // Custom hook for fetching all data
+  const { 
+    isLoading, 
+    error,
+    userData,
+    refetchAll
+  } = useDashboardData();
 
   // Mock gamification data - now using store values
   const [streak, setStreak] = useState(4);
@@ -94,234 +84,13 @@ export default function Dashboard() {
     }
   }, [status, router]);
 
-  // Fetch user data
+  // Update state from userData when it changes
   useEffect(() => {
-    if (status === 'authenticated' && session?.user && !dataLoaded) {
-      console.log("🔄 Dashboard: User authenticated, fetching data");
-      fetchUserData();
-      fetchExpenses();
-      fetchIncomes();
-      fetchExperience();
-    }
-  }, [status, session, dataLoaded]);
-
-  // Calculate taxes whenever income or employment mode changes
-  useEffect(() => {
-    calculateTaxes();
-  }, [income, employmentMode, incomeFrequency]);
-
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/user');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-      
-      const userData = await response.json();
-      setIncome(userData.income || 0);
+    if (userData && 'employmentMode' in userData) {
       setEmploymentMode(userData.employmentMode || 'full-time');
-      setLoading(false);
-    } catch (error) {
-      setError('Failed to load user data');
-      setLoading(false);
+      calculateTaxes();
     }
-  };
-
-  const fetchExpenses = async () => {
-    try {
-      console.log("🔍 Dashboard: Fetching expenses...");
-      const response = await fetch('/api/expenses');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch expenses');
-      }
-      
-      const expensesData = await response.json();
-      console.log("📥 Dashboard: Received expenses data:", expensesData);
-      
-      // Update local state
-      setExpenses(expensesData);
-      
-      // Also update the Zustand store with the original IDs preserved
-      if (Array.isArray(expensesData) && expensesData.length > 0) {
-        console.log(`✅ Dashboard: Setting ${expensesData.length} expenses in store`);
-        updateStoreExpenses(expensesData);
-      } else {
-        console.log("⚠️ Dashboard: No expenses data received or empty array");
-      }
-    } catch (error) {
-      console.error('❌ Dashboard: Error fetching expenses:', error);
-      setError('Failed to load expenses');
-    }
-  };
-
-  const fetchIncomes = async () => {
-    try {
-      console.log("🔍 Dashboard: Fetching incomes...");
-      const response = await fetch('/api/income');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch income sources');
-      }
-      
-      const incomesData = await response.json();
-      console.log("📥 Dashboard: Received incomes data:", incomesData);
-      
-      // Use setIncomes to preserve the original database IDs
-      if (Array.isArray(incomesData) && incomesData.length > 0) {
-        console.log(`✅ Dashboard: Setting ${incomesData.length} incomes in store`);
-        updateStoreIncomes(incomesData);
-      } else {
-        console.log("⚠️ Dashboard: No incomes data received or empty array");
-      }
-    } catch (error) {
-      console.error('❌ Dashboard: Error fetching incomes:', error);
-      setError('Failed to load income sources');
-    }
-  };
-
-  const fetchExperience = async () => {
-    try {
-      const response = await fetch('/api/user/experience');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch experience data');
-      }
-      
-      const data = await response.json();
-      
-      if (data.experience !== undefined && data.level !== undefined) {
-        // Update Zustand store with saved experience and level
-        setExperience({
-          experience: data.experience,
-          level: data.level
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load experience data:', error);
-    }
-  };
-
-  const saveIncome = async () => {
-    try {
-      const response = await fetch('/api/user/income', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          income, 
-          incomeFrequency,
-          employmentMode 
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update income');
-      }
-
-      // Add experience for updating income
-      addExperience(10);
-    } catch (error) {
-      setError('Failed to save income');
-    }
-  };
-
-  const handleAddExpense = async () => {
-    if (!newExpense.category || !newExpense.amount) return;
-    
-    try {
-      const response = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newExpense),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to add expense');
-      }
-      
-      const addedExpense = await response.json();
-      setExpenses([...expenses, addedExpense]);
-      setNewExpense({
-        category: '',
-        amount: 0,
-        frequency: 'monthly',
-        description: ''
-      });
-
-      // Add experience for adding expenses
-      addExperience(5);
-    } catch (error) {
-      setError('Failed to add expense');
-    }
-  };
-
-  const handleRemoveExpense = async (id: string) => {
-    try {
-      const response = await fetch(`/api/expenses/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete expense');
-      }
-      
-      setExpenses(expenses.filter(expense => expense.id !== id));
-    } catch (error) {
-      setError('Failed to remove expense');
-    }
-  };
-
-  const calculateTaxBracket = (annualIncome: number): number => {
-    if (annualIncome <= 11000) return 0.10;
-    if (annualIncome <= 44725) return 0.12;
-    if (annualIncome <= 95375) return 0.22;
-    if (annualIncome <= 182100) return 0.24;
-    if (annualIncome <= 231250) return 0.32;
-    if (annualIncome <= 578125) return 0.35;
-    return 0.37;
-  };
-
-  const convertToMonthly = (amount: number, frequency: Frequency): number => {
-    switch (frequency) {
-      case 'one-time':
-        return amount / 12; // Spread one-time amount over a year
-      case 'weekly':
-        return amount * 52 / 12;
-      case 'bi-weekly':
-        return amount * 26 / 12;
-      case 'monthly':
-        return amount;
-      case 'quarterly':
-        return amount / 3;
-      case 'yearly':
-        return amount / 12;
-      default:
-        return amount;
-    }
-  };
-
-  const calculateTaxes = () => {
-    const annualIncome = convertToMonthly(income, incomeFrequency) * 12;
-    let taxBracketValue = calculateTaxBracket(annualIncome);
-    
-    // Adjust tax bracket for different employment modes
-    if (employmentMode === 'contract') {
-      taxBracketValue += 0.0765; // Additional self-employment tax
-    }
-    
-    const taxAmountValue = annualIncome * taxBracketValue;
-    const afterTaxIncomeValue = annualIncome - taxAmountValue;
-    
-    setTaxBracket(taxBracketValue);
-    setTaxAmount(taxAmountValue);
-    setAfterTaxIncome(afterTaxIncomeValue);
-  };
+  }, [userData, calculateTaxes]);
 
   // Calculate total monthly expenses
   const totalMonthlyExpenses = expenses.reduce((sum, expense) => {
@@ -361,19 +130,16 @@ export default function Dashboard() {
     console.log("🧹 Dashboard: Resetting data loading state");
     setDataLoaded(false);
     // Trigger a complete data reload
-    fetchUserData();
-    fetchExpenses();
-    fetchIncomes();
-    fetchExperience();
+    refetchAll();
   };
 
   // Main content based on active sidebar item
   const renderContent = () => {
-    if (loading) {
+    if (isLoading) {
       return (
         <div className="w-full h-full flex flex-col items-center justify-center p-6">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading your financial dashboard...</p>
+          <p className="text-gray-600">Loading your financial dashboard...</p>
         </div>
       );
     }
@@ -472,7 +238,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-indigo-50">
         <div className="text-xl text-indigo-500 flex items-center space-x-2">
@@ -496,12 +262,12 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="flex flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="w-full md:w-64 bg-white dark:bg-gray-800 md:min-h-screen shadow-sm">
-          <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="w-full md:w-64 bg-white md:min-h-screen shadow-sm">
+          <div className="p-4 flex items-center justify-between border-b border-gray-200">
+            <h1 className="text-xl font-bold text-blue-600">
               Finny
             </h1>
             <p className="text-xs text-gray-500">Smart money management</p>
@@ -509,7 +275,7 @@ export default function Dashboard() {
           
           {status === 'authenticated' && (
             <div className="p-4">
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-gray-100 rounded-lg p-3 mb-4">
                 <LevelProgress 
                   level={level}
                   experience={experience}
@@ -524,8 +290,8 @@ export default function Dashboard() {
                     onClick={() => setActiveSidebarItem(item.id)}
                     className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors ${
                       activeSidebarItem === item.id
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'hover:bg-gray-100'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
