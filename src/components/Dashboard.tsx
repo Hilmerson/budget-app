@@ -34,13 +34,11 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const {
-    level,
-    experience,
-    nextLevelExperience,
-    afterTaxIncome,
+    gamification: { level, experience, nextLevelExperience },
+    calculations: { afterTaxIncome },
     expenses,
     addExperience,
-    calculateTaxes,
+    updateCalculations,
     dataLoaded,
     setDataLoaded
   } = useBudgetStore();
@@ -88,9 +86,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (userData && 'employmentMode' in userData) {
       setEmploymentMode(userData.employmentMode || 'full-time');
-      calculateTaxes();
+      updateCalculations();
     }
-  }, [userData, calculateTaxes]);
+  }, [userData, updateCalculations]);
 
   // Calculate total monthly expenses
   const totalMonthlyExpenses = expenses.reduce((sum, expense) => {

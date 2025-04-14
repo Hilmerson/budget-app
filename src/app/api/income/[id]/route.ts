@@ -3,14 +3,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma'; // Use singleton Prisma instance
 
-interface Params {
+interface Context {
   params: {
     id: string;
   };
 }
 
 // GET /api/income/[id] - Get a specific income record
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, context: Context) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { id } = params;
+    const id = context.params.id;
     
     const income = await prisma.income.findUnique({
       where: {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 // PUT /api/income/[id] - Update an income record
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(request: NextRequest, context: Context) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { id } = params;
+    const id = context.params.id;
     const body = await request.json();
     const { source, amount, frequency, description, date } = body;
     
@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 }
 
 // DELETE /api/income/[id] - Delete an income record
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, context: Context) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -97,7 +97,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { id } = params;
+    const id = context.params.id;
     
     // Check if the income exists and belongs to the user
     const existingIncome = await prisma.income.findUnique({

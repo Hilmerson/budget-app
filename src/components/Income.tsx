@@ -28,7 +28,7 @@ interface IncomeWithMonthly {
 }
 
 export default function Income() {
-  const { incomes, addIncome, removeIncome, setTotalIncome, employmentMode, addExperience } = useBudgetStore();
+  const { incomes, addIncome, removeIncome, updateCalculations, employmentMode, addExperience } = useBudgetStore();
   const { isLoadingIncome, incomeError, refetchIncome } = useIncomeData();
   
   const [newIncome, setNewIncome] = useState({
@@ -60,10 +60,12 @@ export default function Income() {
 
   const totalIncome = monthlyIncomes.reduce((sum, income) => sum + income.monthlyAmount, 0);
 
-  // Update total income in the store when it changes
+  // Update calculations in the store when income changes
   useEffect(() => {
-    setTotalIncome(totalIncome);
-  }, [totalIncome, setTotalIncome]);
+    if (incomes.length > 0) {
+      updateCalculations();
+    }
+  }, [incomes, updateCalculations]);
 
   const handleAddIncome = async () => {
     if (newIncome.source && newIncome.amount > 0 && !isSubmitting) {

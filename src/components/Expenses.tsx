@@ -21,7 +21,7 @@ const expenseCategories = [
 type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export default function Expenses() {
-  const { expenses, addExpense, removeExpense, afterTaxIncome, addExperience } = useBudgetStore();
+  const { expenses, addExpense, removeExpense, calculations: { afterTaxIncome }, addExperience } = useBudgetStore();
   const { isLoadingExpense, expenseError, refetchExpense } = useExpenseData();
 
   const [newExpense, setNewExpense] = useState({

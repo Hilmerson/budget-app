@@ -1,8 +1,11 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+// Shared types
+export type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type EmploymentMode = 'full-time' | 'contract' | 'other';
 
-interface Expense {
+export interface Expense {
   id: string;
   userId?: string;
   category: string;
@@ -14,7 +17,7 @@ interface Expense {
   updatedAt?: Date | string;
 }
 
-interface Income {
+export interface Income {
   id: string;
   userId?: string;
   source: string;
@@ -23,59 +26,82 @@ interface Income {
   description?: string;
   date?: Date | string;
   createdAt?: Date | string;
-  updatedAt?: Date | string;
+  updatedAt?: string;
 }
 
-export interface BudgetState {
-  // User-related state
-  userId?: string;
-  employmentMode: 'full-time' | 'contract' | 'other';
-  income: number;
-  incomeFrequency: Frequency;
-  isConfirmed: boolean;
+// Interface for calculated financial data
+interface FinancialCalculations {
+  totalMonthlyIncome: number;
+  totalAnnualIncome: number;
+  totalMonthlyExpenses: number;
+  monthlyBalance: number;
   taxBracket: number;
   taxAmount: number;
   afterTaxIncome: number;
-  expenses: Expense[];
-  incomes: Income[];
-  totalIncome: number;
-  
-  // Gamification
+}
+
+// Gamification state
+interface GamificationState {
   level: number;
   experience: number;
   nextLevelExperience: number;
+  streak: number;
+  healthScore: number;
+}
+
+// Main state interface
+export interface BudgetState {
+  // User-related state
+  userId?: string;
+  employmentMode: EmploymentMode;
+  incomeFrequency: Frequency;
+  isConfirmed: boolean;
   
-  // Data loading state
+  // Data collections
+  expenses: Expense[];
+  incomes: Income[];
+  
+  // Calculated financial data
+  calculations: FinancialCalculations;
+  
+  // Gamification state
+  gamification: GamificationState;
+  
+  // UI state
   dataLoaded: boolean;
   
-  // Actions
-  setEmploymentMode: (mode: 'full-time' | 'contract' | 'other') => void;
-  setIncome: (amount: number) => void;
-  setTotalIncome: (amount: number) => void;
+  // Actions: Core data operations
+  setEmploymentMode: (mode: EmploymentMode) => void;
   setIncomeFrequency: (frequency: Frequency) => void;
   setConfirmed: (confirmed: boolean) => void;
   
+  // Expense operations
   addExpense: (expense: Expense | Omit<Expense, 'id'>) => void;
   removeExpense: (id: string) => void;
   clearExpenses: () => void;
   setExpenses: (expenses: Expense[]) => void;
   
+  // Income operations
   addIncome: (income: Income | Omit<Income, 'id'>) => void;
   removeIncome: (id: string) => void;
   clearIncomes: () => void;
   setIncomes: (incomes: Income[]) => void;
   
-  calculateTaxes: () => void;
+  // Financial calculations
+  updateCalculations: () => void;
   
-  // XP methods
+  // Gamification methods
   addExperience: (amount: number) => void;
   setExperience: (data: { experience: number, level: number }) => void;
-  calculateLevel: () => void;
+  updateGamification: () => void;
+  setStreak: (streak: number) => void;
+  setHealthScore: (score: number) => void;
   
-  // Data loading flag
+  // Data loading
   setDataLoaded: (loaded: boolean) => void;
 }
 
+// Utility functions moved outside the store for better organization
 const calculateTaxBracket = (income: number): number => {
   if (income <= 11000) return 0.10;
   if (income <= 44725) return 0.12;
@@ -105,197 +131,347 @@ const convertToMonthly = (amount: number, frequency: Frequency): number => {
   }
 };
 
-export const useBudgetStore = create<BudgetState>((set, get) => ({
-  // Initial State
-  employmentMode: 'full-time',
-  income: 0,
-  incomeFrequency: 'monthly',
-  isConfirmed: false,
-  taxBracket: 0,
-  taxAmount: 0,
-  afterTaxIncome: 0,
-  expenses: [],
-  incomes: [],
-  totalIncome: 0,
+// Convert any amount to monthly based on frequency
+const getMonthlyAmount = (item: { amount: number, frequency: Frequency }): number => {
+  let monthlyAmount = item.amount;
   
-  // Data loading state
-  dataLoaded: false,
+  if (item.frequency === 'one-time') monthlyAmount = item.amount / 12;
+  else if (item.frequency === 'yearly') monthlyAmount = item.amount / 12;
+  else if (item.frequency === 'quarterly') monthlyAmount = item.amount / 3;
+  else if (item.frequency === 'weekly') monthlyAmount = item.amount * 4.33;
+  else if (item.frequency === 'bi-weekly') monthlyAmount = item.amount * 2.17;
   
-  // Gamification
-  level: 1,
-  experience: 0,
-  nextLevelExperience: 100,
+  return monthlyAmount;
+};
 
-  // Actions
-  setEmploymentMode: (mode) => set({ employmentMode: mode }),
-  setIncome: (amount) => {
-    set({ income: amount });
-    get().calculateTaxes();
-  },
-  setTotalIncome: (amount) => set({ totalIncome: amount }),
-  setIncomeFrequency: (frequency) => set({ incomeFrequency: frequency }),
-  setConfirmed: (confirmed) => set({ isConfirmed: confirmed }),
+// Calculate XP thresholds for different levels
+const getLevelInfo = (experience: number): { level: number, nextLevelExperience: number } => {
+  let level = 1;
+  let nextLevelExperience = 100;
   
-  addExpense: (expense: Expense | Omit<Expense, 'id'>) => 
-    set((state) => ({
-      expenses: [...state.expenses, 'id' in expense ? expense as Expense : { ...expense, id: Math.random().toString(36).substr(2, 9) }]
-    })),
+  if (experience > 100) level = 2;
+  if (experience > 250) level = 3;
+  if (experience > 450) level = 4;
+  if (experience > 700) level = 5;
+  if (experience > 1000) level = 6;
+  if (experience > 1350) level = 7;
+  if (experience > 1750) level = 8;
+  if (experience > 2200) level = 9;
+  if (experience > 2700) level = 10;
   
-  removeExpense: (id: string) =>
-    set((state) => ({
-      expenses: state.expenses.filter((expense) => expense.id !== id)
-    })),
-    
-  clearExpenses: () => set({ expenses: [] }),
+  // Set next level target
+  switch (level) {
+    case 1: nextLevelExperience = 100; break;
+    case 2: nextLevelExperience = 250; break;
+    case 3: nextLevelExperience = 450; break;
+    case 4: nextLevelExperience = 700; break;
+    case 5: nextLevelExperience = 1000; break;
+    case 6: nextLevelExperience = 1350; break;
+    case 7: nextLevelExperience = 1750; break;
+    case 8: nextLevelExperience = 2200; break;
+    case 9: nextLevelExperience = 2700; break;
+    case 10: nextLevelExperience = 3300; break;
+    default: nextLevelExperience = level * 350; break;
+  }
   
-  setExpenses: (expenses: Expense[]) => {
-    console.log(`🔄 Store: Setting ${expenses.length} expenses in store`);
-    // Make sure we have all the required fields
-    const validExpenses = expenses.filter(expense => 
-      expense.id && expense.category && expense.amount !== undefined
-    );
-    console.log(`✅ Store: Valid expenses count: ${validExpenses.length}`);
-    set({ 
-      expenses: validExpenses,
-      dataLoaded: true 
-    });
-  },
-  
-  addIncome: (income: Income | Omit<Income, 'id'>) => 
-    set((state) => {
-      console.log('➕ Store: Adding income', income);
-      return {
-        incomes: [...state.incomes, 'id' in income ? income as Income : { ...income, id: Math.random().toString(36).substr(2, 9) }]
-      };
-    }),
-  
-  removeIncome: (id: string) =>
-    set((state) => {
-      console.log(`🗑️ Store: Removing income with id ${id}`);
-      return {
-        incomes: state.incomes.filter((income) => income.id !== id)
-      };
-    }),
-    
-  clearIncomes: () => {
-    console.log('🧹 Store: Clearing all incomes');
-    set({ incomes: [] });
-  },
-  
-  setIncomes: (incomes: Income[]) => {
-    console.log(`🔄 Store: Setting ${incomes.length} incomes in store`);
-    // Make sure we have all the required fields
-    const validIncomes = incomes.filter(income => 
-      income.id && income.source && income.amount !== undefined
-    );
-    console.log(`✅ Store: Valid incomes count: ${validIncomes.length}`);
-    set({ 
-      incomes: validIncomes,
-      dataLoaded: true 
-    });
-  },
-  
-  calculateTaxes: () => {
-    const { totalIncome, employmentMode } = get();
-    const annualIncome = totalIncome * 12; // Total income is already monthly
-    let taxBracket = calculateTaxBracket(annualIncome);
-    
-    // Adjust tax bracket for different employment modes
-    if (employmentMode === 'contract') {
-      taxBracket += 0.0765; // Additional self-employment tax
-    }
-    
-    const taxAmount = annualIncome * taxBracket;
-    const afterTaxIncome = totalIncome - (taxAmount / 12); // Monthly after-tax income
-    
-    set({ taxBracket, taxAmount, afterTaxIncome });
-  },
-  
-  // XP methods
-  addExperience: (amount) => {
-    set((state) => {
-      const newExperience = state.experience + amount;
-      return { experience: newExperience };
-    });
-    get().calculateLevel();
-    
-    // Save experience and level to the database
-    const { experience, level } = get();
-    
-    // Use setTimeout to avoid blocking the UI
-    setTimeout(async () => {
-      try {
-        const response = await fetch('/api/user/experience', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            experience,
-            level
-          }),
+  return { level, nextLevelExperience };
+};
+
+// Create store with the persist middleware to save state to localStorage
+export const useBudgetStore = create<BudgetState>()(
+  persist(
+    (set, get) => ({
+      // Initial State
+      employmentMode: 'full-time',
+      incomeFrequency: 'monthly',
+      isConfirmed: false,
+      expenses: [],
+      incomes: [],
+      dataLoaded: false,
+      
+      // Initial calculations
+      calculations: {
+        totalMonthlyIncome: 0,
+        totalAnnualIncome: 0,
+        totalMonthlyExpenses: 0,
+        monthlyBalance: 0,
+        taxBracket: 0,
+        taxAmount: 0,
+        afterTaxIncome: 0
+      },
+      
+      // Initial gamification state
+      gamification: {
+        level: 1,
+        experience: 0,
+        nextLevelExperience: 100,
+        streak: 0,
+        healthScore: 50
+      },
+
+      // Core data actions
+      setEmploymentMode: (mode) => {
+        set({ employmentMode: mode });
+        get().updateCalculations();
+      },
+      
+      setIncomeFrequency: (frequency) => {
+        set({ incomeFrequency: frequency });
+        get().updateCalculations();
+      },
+      
+      setConfirmed: (confirmed) => set({ isConfirmed: confirmed }),
+      
+      // Expense operations
+      addExpense: (expense) => {
+        set((state) => ({
+          expenses: [
+            ...state.expenses, 
+            'id' in expense 
+              ? expense as Expense 
+              : { ...expense, id: Math.random().toString(36).substr(2, 9) }
+          ]
+        }));
+        get().updateCalculations();
+      },
+      
+      removeExpense: (id) => {
+        set((state) => ({
+          expenses: state.expenses.filter((expense) => expense.id !== id)
+        }));
+        get().updateCalculations();
+      },
+      
+      clearExpenses: () => {
+        set({ expenses: [] });
+        get().updateCalculations();
+      },
+      
+      setExpenses: (expenses) => {
+        console.log(`🔄 Store: Setting ${expenses.length} expenses in store`);
+        // Make sure we have all the required fields
+        const validExpenses = expenses.filter(expense => 
+          expense.id && expense.category && expense.amount !== undefined
+        );
+        console.log(`✅ Store: Valid expenses count: ${validExpenses.length}`);
+        set({ 
+          expenses: validExpenses,
+          dataLoaded: true 
+        });
+        get().updateCalculations();
+      },
+      
+      // Income operations
+      addIncome: (income) => {
+        set((state) => ({
+          incomes: [
+            ...state.incomes, 
+            'id' in income 
+              ? income as Income 
+              : { ...income, id: Math.random().toString(36).substr(2, 9) }
+          ]
+        }));
+        get().updateCalculations();
+      },
+      
+      removeIncome: (id) => {
+        set((state) => ({
+          incomes: state.incomes.filter((income) => income.id !== id)
+        }));
+        get().updateCalculations();
+      },
+      
+      clearIncomes: () => {
+        set({ incomes: [] });
+        get().updateCalculations();
+      },
+      
+      setIncomes: (incomes) => {
+        console.log(`🔄 Store: Setting ${incomes.length} incomes in store`);
+        // Make sure we have all the required fields
+        const validIncomes = incomes.filter(income => 
+          income.id && income.source && income.amount !== undefined
+        );
+        console.log(`✅ Store: Valid incomes count: ${validIncomes.length}`);
+        set({ 
+          incomes: validIncomes,
+          dataLoaded: true 
+        });
+        get().updateCalculations();
+      },
+      
+      // Calculate financial metrics
+      updateCalculations: () => {
+        const { incomes, expenses, employmentMode } = get();
+        
+        // Calculate total monthly income from all sources
+        const totalMonthlyIncome = incomes.reduce((total, income) => 
+          total + getMonthlyAmount(income), 0);
+        
+        // Calculate total annual income
+        const totalAnnualIncome = totalMonthlyIncome * 12;
+        
+        // Calculate total monthly expenses
+        const totalMonthlyExpenses = expenses.reduce((total, expense) => 
+          total + getMonthlyAmount(expense), 0);
+        
+        // Calculate tax information
+        let taxBracket = calculateTaxBracket(totalAnnualIncome);
+        
+        // Adjust tax bracket for different employment modes
+        if (employmentMode === 'contract') {
+          taxBracket += 0.0765; // Additional self-employment tax
+        }
+        
+        const taxAmount = totalAnnualIncome * taxBracket;
+        const afterTaxIncome = totalAnnualIncome - taxAmount;
+        const monthlyAfterTaxIncome = afterTaxIncome / 12;
+        
+        // Calculate monthly balance (after-tax income minus expenses)
+        const monthlyBalance = monthlyAfterTaxIncome - totalMonthlyExpenses;
+        
+        // Update calculations in state
+        set({
+          calculations: {
+            totalMonthlyIncome,
+            totalAnnualIncome,
+            totalMonthlyExpenses,
+            monthlyBalance,
+            taxBracket,
+            taxAmount,
+            afterTaxIncome
+          }
         });
         
-        if (!response.ok) {
-          console.error('Failed to save experience to database');
-        }
-      } catch (error) {
-        console.error('Error saving experience:', error);
+        // Update health score based on financial data
+        get().updateGamification();
+      },
+      
+      // Gamification methods
+      addExperience: (amount) => {
+        set((state) => {
+          const newExperience = state.gamification.experience + amount;
+          const { level, nextLevelExperience } = getLevelInfo(newExperience);
+          
+          return { 
+            gamification: {
+              ...state.gamification,
+              experience: newExperience,
+              level,
+              nextLevelExperience
+            }
+          };
+        });
+        
+        // Save experience and level to the database
+        const { gamification } = get();
+        
+        // Use setTimeout to avoid blocking the UI
+        setTimeout(async () => {
+          try {
+            const response = await fetch('/api/user/experience', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                experience: gamification.experience,
+                level: gamification.level
+              }),
+            });
+            
+            if (!response.ok) {
+              console.error('Failed to save experience to database');
+            }
+          } catch (error) {
+            console.error('Error saving experience:', error);
+          }
+        }, 0);
+      },
+      
+      setExperience: (data) => {
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            experience: data.experience,
+            level: data.level
+          }
+        }));
+        get().updateGamification();
+      },
+      
+      updateGamification: () => {
+        const { calculations, gamification, expenses, incomes } = get();
+        
+        // Calculate health score based on financial health
+        // 1. Income-to-expense ratio (weight: 40%)
+        const incomeExpenseRatio = calculations.totalMonthlyExpenses > 0 
+          ? calculations.totalMonthlyIncome / calculations.totalMonthlyExpenses 
+          : 2; // If no expenses, assume good ratio
+        const ratioScore = Math.min(100, incomeExpenseRatio * 50); // Score from 0-100
+        
+        // 2. Diversity of income sources (weight: 20%)
+        const incomeDiversity = Math.min(5, incomes.length) * 20; // Score from 0-100
+        
+        // 3. Expense tracking (weight: 20%)
+        const expenseTracking = Math.min(10, expenses.length) * 10; // Score from 0-100
+        
+        // 4. Monthly balance (weight: 20%)
+        const balanceScore = calculations.monthlyBalance > 0 
+          ? Math.min(100, (calculations.monthlyBalance / calculations.totalMonthlyIncome) * 200)
+          : Math.max(0, 50 + (calculations.monthlyBalance / calculations.totalMonthlyIncome) * 100);
+        
+        // Calculate weighted overall score
+        const healthScore = Math.round(
+          ratioScore * 0.4 +
+          incomeDiversity * 0.2 +
+          expenseTracking * 0.2 +
+          balanceScore * 0.2
+        );
+        
+        // Update health score
+        set({
+          gamification: {
+            ...gamification,
+            healthScore: Math.max(0, Math.min(100, healthScore))
+          }
+        });
+      },
+      
+      setStreak: (streak) => {
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            streak
+          }
+        }));
+      },
+      
+      setHealthScore: (score) => {
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            healthScore: score
+          }
+        }));
+      },
+      
+      // Data loading
+      setDataLoaded: (loaded) => {
+        set({ dataLoaded: loaded });
       }
-    }, 0);
-  },
-  
-  setExperience: (data) => {
-    set({ 
-      experience: data.experience, 
-      level: data.level 
-    });
-  },
-  
-  calculateLevel: () => {
-    const { experience } = get();
-    
-    // Simple level calculation
-    // Level 1: 0-100 XP
-    // Level 2: 101-250 XP
-    // Level 3: 251-450 XP
-    // Level 4: 451-700 XP
-    // Level 5: 701-1000 XP
-    // And so on...
-    
-    let level = 1;
-    let nextLevelExperience = 100;
-    
-    if (experience > 100) level = 2;
-    if (experience > 250) level = 3;
-    if (experience > 450) level = 4;
-    if (experience > 700) level = 5;
-    if (experience > 1000) level = 6;
-    if (experience > 1350) level = 7;
-    if (experience > 1750) level = 8;
-    if (experience > 2200) level = 9;
-    if (experience > 2700) level = 10;
-    
-    // Set next level target
-    switch (level) {
-      case 1: nextLevelExperience = 100; break;
-      case 2: nextLevelExperience = 250; break;
-      case 3: nextLevelExperience = 450; break;
-      case 4: nextLevelExperience = 700; break;
-      case 5: nextLevelExperience = 1000; break;
-      case 6: nextLevelExperience = 1350; break;
-      case 7: nextLevelExperience = 1750; break;
-      case 8: nextLevelExperience = 2200; break;
-      case 9: nextLevelExperience = 2700; break;
-      case 10: nextLevelExperience = 3300; break;
-      default: nextLevelExperience = level * 350; break;
+    }),
+    {
+      name: 'budget-store', // Name for localStorage
+      partialize: (state) => ({
+        // Only persist the minimal necessary state
+        employmentMode: state.employmentMode,
+        incomeFrequency: state.incomeFrequency,
+        isConfirmed: state.isConfirmed,
+        expenses: state.expenses,
+        incomes: state.incomes,
+        gamification: state.gamification,
+      }),
     }
-    
-    set({ level, nextLevelExperience });
-  },
-  
-  // Data loading flag
-  setDataLoaded: (loaded) => {
-    set({ dataLoaded: loaded });
-  }
-})); 
+  )
+); 

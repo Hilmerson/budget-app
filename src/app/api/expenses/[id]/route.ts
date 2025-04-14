@@ -5,11 +5,11 @@ import prisma from '@/lib/prisma'; // Use singleton Prisma instance
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // First validate that params.id exists
-    const { id } = params;
+    const id = context.params.id;
     if (!id) {
       return NextResponse.json(
         { message: 'Missing expense ID' },
