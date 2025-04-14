@@ -4,35 +4,39 @@ type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' |
 
 interface Expense {
   id: string;
+  userId?: string;
   category: string;
   amount: number;
   frequency: Frequency;
   description?: string;
+  date?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 interface Income {
   id: string;
+  userId?: string;
   source: string;
   amount: number;
   frequency: Frequency;
+  description?: string;
+  date?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
-interface BudgetState {
-  // Basic Info
+export interface BudgetState {
+  // User-related state
+  userId?: string;
   employmentMode: 'full-time' | 'contract' | 'other';
   income: number;
   incomeFrequency: Frequency;
   isConfirmed: boolean;
-  
-  // Tax Information
   taxBracket: number;
   taxAmount: number;
   afterTaxIncome: number;
-  
-  // Expenses
   expenses: Expense[];
-  
-  // Income sources
   incomes: Income[];
   totalIncome: number;
   
@@ -41,26 +45,35 @@ interface BudgetState {
   experience: number;
   nextLevelExperience: number;
   
+  // Data loading state
+  dataLoaded: boolean;
+  
   // Actions
   setEmploymentMode: (mode: 'full-time' | 'contract' | 'other') => void;
   setIncome: (amount: number) => void;
   setTotalIncome: (amount: number) => void;
   setIncomeFrequency: (frequency: Frequency) => void;
   setConfirmed: (confirmed: boolean) => void;
-  addExpense: (expense: Omit<Expense, 'id'>) => void;
+  
+  addExpense: (expense: Expense | Omit<Expense, 'id'>) => void;
   removeExpense: (id: string) => void;
   clearExpenses: () => void;
   setExpenses: (expenses: Expense[]) => void;
-  addIncome: (income: Omit<Income, 'id'>) => void;
+  
+  addIncome: (income: Income | Omit<Income, 'id'>) => void;
   removeIncome: (id: string) => void;
   clearIncomes: () => void;
   setIncomes: (incomes: Income[]) => void;
+  
   calculateTaxes: () => void;
   
   // XP methods
   addExperience: (amount: number) => void;
-  setExperience: (data: { experience: number; level: number }) => void;
+  setExperience: (data: { experience: number, level: number }) => void;
   calculateLevel: () => void;
+  
+  // Data loading flag
+  setDataLoaded: (loaded: boolean) => void;
 }
 
 const calculateTaxBracket = (income: number): number => {
@@ -105,6 +118,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   incomes: [],
   totalIncome: 0,
   
+  // Data loading state
+  dataLoaded: false,
+  
   // Gamification
   level: 1,
   experience: 0,
@@ -120,33 +136,64 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   setIncomeFrequency: (frequency) => set({ incomeFrequency: frequency }),
   setConfirmed: (confirmed) => set({ isConfirmed: confirmed }),
   
-  addExpense: (expense) => 
+  addExpense: (expense: Expense | Omit<Expense, 'id'>) => 
     set((state) => ({
-      expenses: [...state.expenses, { ...expense, id: Math.random().toString(36).substr(2, 9) }]
+      expenses: [...state.expenses, 'id' in expense ? expense as Expense : { ...expense, id: Math.random().toString(36).substr(2, 9) }]
     })),
   
-  removeExpense: (id) =>
+  removeExpense: (id: string) =>
     set((state) => ({
       expenses: state.expenses.filter((expense) => expense.id !== id)
     })),
     
   clearExpenses: () => set({ expenses: [] }),
   
-  setExpenses: (expenses) => set({ expenses }),
+  setExpenses: (expenses: Expense[]) => {
+    console.log(`🔄 Store: Setting ${expenses.length} expenses in store`);
+    // Make sure we have all the required fields
+    const validExpenses = expenses.filter(expense => 
+      expense.id && expense.category && expense.amount !== undefined
+    );
+    console.log(`✅ Store: Valid expenses count: ${validExpenses.length}`);
+    set({ 
+      expenses: validExpenses,
+      dataLoaded: true 
+    });
+  },
   
-  addIncome: (income) => 
-    set((state) => ({
-      incomes: [...state.incomes, { ...income, id: Math.random().toString(36).substr(2, 9) }]
-    })),
+  addIncome: (income: Income | Omit<Income, 'id'>) => 
+    set((state) => {
+      console.log('➕ Store: Adding income', income);
+      return {
+        incomes: [...state.incomes, 'id' in income ? income as Income : { ...income, id: Math.random().toString(36).substr(2, 9) }]
+      };
+    }),
   
-  removeIncome: (id) =>
-    set((state) => ({
-      incomes: state.incomes.filter((income) => income.id !== id)
-    })),
+  removeIncome: (id: string) =>
+    set((state) => {
+      console.log(`🗑️ Store: Removing income with id ${id}`);
+      return {
+        incomes: state.incomes.filter((income) => income.id !== id)
+      };
+    }),
     
-  clearIncomes: () => set({ incomes: [] }),
+  clearIncomes: () => {
+    console.log('🧹 Store: Clearing all incomes');
+    set({ incomes: [] });
+  },
   
-  setIncomes: (incomes) => set({ incomes }),
+  setIncomes: (incomes: Income[]) => {
+    console.log(`🔄 Store: Setting ${incomes.length} incomes in store`);
+    // Make sure we have all the required fields
+    const validIncomes = incomes.filter(income => 
+      income.id && income.source && income.amount !== undefined
+    );
+    console.log(`✅ Store: Valid incomes count: ${validIncomes.length}`);
+    set({ 
+      incomes: validIncomes,
+      dataLoaded: true 
+    });
+  },
   
   calculateTaxes: () => {
     const { totalIncome, employmentMode } = get();
@@ -245,5 +292,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     }
     
     set({ level, nextLevelExperience });
+  },
+  
+  // Data loading flag
+  setDataLoaded: (loaded) => {
+    set({ dataLoaded: loaded });
   }
 })); 

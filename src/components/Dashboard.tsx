@@ -43,7 +43,9 @@ export default function Dashboard() {
     experience,
     nextLevelExperience,
     addExperience,
-    setExperience
+    setExperience,
+    dataLoaded,
+    setDataLoaded
   } = useBudgetStore();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -94,13 +96,14 @@ export default function Dashboard() {
 
   // Fetch user data
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
+    if (status === 'authenticated' && session?.user && !dataLoaded) {
+      console.log("🔄 Dashboard: User authenticated, fetching data");
       fetchUserData();
       fetchExpenses();
       fetchIncomes();
       fetchExperience();
     }
-  }, [status, session]);
+  }, [status, session, dataLoaded]);
 
   // Calculate taxes whenever income or employment mode changes
   useEffect(() => {
@@ -128,6 +131,7 @@ export default function Dashboard() {
 
   const fetchExpenses = async () => {
     try {
+      console.log("🔍 Dashboard: Fetching expenses...");
       const response = await fetch('/api/expenses');
       
       if (!response.ok) {
@@ -135,20 +139,27 @@ export default function Dashboard() {
       }
       
       const expensesData = await response.json();
+      console.log("📥 Dashboard: Received expenses data:", expensesData);
+      
       // Update local state
       setExpenses(expensesData);
       
       // Also update the Zustand store with the original IDs preserved
-      if (Array.isArray(expensesData)) {
+      if (Array.isArray(expensesData) && expensesData.length > 0) {
+        console.log(`✅ Dashboard: Setting ${expensesData.length} expenses in store`);
         updateStoreExpenses(expensesData);
+      } else {
+        console.log("⚠️ Dashboard: No expenses data received or empty array");
       }
     } catch (error) {
+      console.error('❌ Dashboard: Error fetching expenses:', error);
       setError('Failed to load expenses');
     }
   };
 
   const fetchIncomes = async () => {
     try {
+      console.log("🔍 Dashboard: Fetching incomes...");
       const response = await fetch('/api/income');
       
       if (!response.ok) {
@@ -156,12 +167,17 @@ export default function Dashboard() {
       }
       
       const incomesData = await response.json();
+      console.log("📥 Dashboard: Received incomes data:", incomesData);
       
       // Use setIncomes to preserve the original database IDs
-      if (Array.isArray(incomesData)) {
+      if (Array.isArray(incomesData) && incomesData.length > 0) {
+        console.log(`✅ Dashboard: Setting ${incomesData.length} incomes in store`);
         updateStoreIncomes(incomesData);
+      } else {
+        console.log("⚠️ Dashboard: No incomes data received or empty array");
       }
     } catch (error) {
+      console.error('❌ Dashboard: Error fetching incomes:', error);
       setError('Failed to load income sources');
     }
   };
@@ -307,12 +323,21 @@ export default function Dashboard() {
     setAfterTaxIncome(afterTaxIncomeValue);
   };
 
+  // Calculate total monthly expenses
   const totalMonthlyExpenses = expenses.reduce((sum, expense) => {
-    const amount = convertToMonthly(expense.amount, expense.frequency);
-    return sum + amount;
+    let monthlyAmount = expense.amount;
+    
+    if (expense.frequency === 'one-time') monthlyAmount = expense.amount / 12;
+    else if (expense.frequency === 'yearly') monthlyAmount = expense.amount / 12;
+    else if (expense.frequency === 'quarterly') monthlyAmount = expense.amount / 3;
+    else if (expense.frequency === 'weekly') monthlyAmount = expense.amount * 4.33;
+    else if (expense.frequency === 'bi-weekly') monthlyAmount = expense.amount * 2.17;
+    
+    return sum + monthlyAmount;
   }, 0);
-
-  const remainingIncome = convertToMonthly(afterTaxIncome, 'yearly') - totalMonthlyExpenses;
+  
+  // Calculate remaining monthly income
+  const remainingIncome = (afterTaxIncome / 12) - totalMonthlyExpenses;
 
   const frequencyOptions = [
     { value: 'one-time', label: 'One Time' },
@@ -330,6 +355,122 @@ export default function Dashboard() {
     { name: 'Transportation', budgeted: 300, spent: 275 },
     { name: 'Entertainment', budgeted: 200, spent: 180 },
   ];
+
+  // Function to manually reset data loading state
+  const resetDataLoadingState = () => {
+    console.log("🧹 Dashboard: Resetting data loading state");
+    setDataLoaded(false);
+    // Trigger a complete data reload
+    fetchUserData();
+    fetchExpenses();
+    fetchIncomes();
+    fetchExperience();
+  };
+
+  // Main content based on active sidebar item
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center p-6">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading your financial dashboard...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center p-6">
+          <div className="text-red-500 text-xl mb-4">😕 {error}</div>
+          <button 
+            onClick={resetDataLoadingState} 
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    if (activeSidebarItem === 'dashboard') {
+      return (
+        <div className="space-y-6">
+          <WelcomeIllustration />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <FinancialHealthCard score={healthScore} />
+            <SavingsGoalCard current={3200} target={5000} />
+            <div className="xl:col-span-1 md:col-span-2 col-span-1">
+              <StreakTracker currentStreak={streak} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="col-span-2">
+              <BudgetComparisonCard categories={budgetCategories} />
+            </div>
+            <div className="space-y-6">
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Monthly Income</div>
+                    <div className="text-xl font-bold text-green-600">${(afterTaxIncome / 12).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Monthly Expenses</div>
+                    <div className="text-xl font-bold text-red-600">${totalMonthlyExpenses.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-600">Remaining</div>
+                    <div className={`text-xl font-bold ${remainingIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${remainingIncome.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Daily Challenge</h2>
+                <Challenge
+                  title="Review Expenses"
+                  description="Review and categorize today's expenses"
+                  progress={1}
+                  goal={1}
+                  reward={25}
+                  type="expense"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activeSidebarItem === 'income') {
+      return (
+        <div className="space-y-6">
+          <Income />
+        </div>
+      );
+    }
+
+    if (activeSidebarItem === 'expenses') {
+      return (
+        <div className="space-y-6">
+          <Expenses />
+        </div>
+      );
+    }
+
+    if (activeSidebarItem === 'achievements') {
+      return (
+        <div>
+          <Achievements />
+        </div>
+      );
+    }
+  };
 
   if (loading) {
     return (
@@ -355,165 +496,52 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-indigo-50">
-      <div className="flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <div className="flex flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="hidden md:flex w-64 flex-col h-screen bg-white border-r border-indigo-100 pt-6 sticky top-0 transition-all">
-          <div className="px-6 mb-8">
-            <div className="flex items-center gap-2 mb-1">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 7.00018C22 7.00018 19.5 9.50018 17.5 9.50018C15.5 9.50018 14.5 7.50018 12.5 7.50018C10.5 7.50018 9.5 9.00018 7.5 9.00018C5.5 9.00018 2 7.00018 2 7.00018" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M22 12.0002C22 12.0002 19.5 14.5002 17.5 14.5002C15.5 14.5002 14.5 12.5002 12.5 12.5002C10.5 12.5002 9.5 14.0002 7.5 14.0002C5.5 14.0002 2 12.0002 2 12.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M22 17.0002C22 17.0002 19.5 19.5002 17.5 19.5002C15.5 19.5002 14.5 17.5002 12.5 17.5002C10.5 17.5002 9.5 19.0002 7.5 19.0002C5.5 19.0002 2 17.0002 2 17.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="17" cy="5" r="2" fill="#4F46E5" />
-              </svg>
-              <h1 className="text-2xl font-bold text-indigo-600">Finny</h1>
-            </div>
-            <p className="text-gray-500 text-sm">Your finances, swimming smoothly</p>
+        <div className="w-full md:w-64 bg-white dark:bg-gray-800 md:min-h-screen shadow-sm">
+          <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              Finny
+            </h1>
+            <p className="text-xs text-gray-500">Smart money management</p>
           </div>
           
-          <div className="px-4 mb-8">
-            <LevelProgress
-              level={level}
-              experience={experience}
-              nextLevelExperience={nextLevelExperience}
-            />
-          </div>
-
-          <div className="flex-1">
-            <ul className="space-y-2 px-3">
-              {sidebarItems.map(item => (
-                <li key={item.id}>
+          {status === 'authenticated' && (
+            <div className="p-4">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-4">
+                <LevelProgress 
+                  level={level}
+                  experience={experience}
+                  nextLevelExperience={nextLevelExperience}
+                />
+              </div>
+            
+              <nav className="space-y-1">
+                {sidebarItems.map((item) => (
                   <button
+                    key={item.id}
                     onClick={() => setActiveSidebarItem(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors ${
                       activeSidebarItem === item.id
-                        ? 'bg-indigo-50 text-indigo-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
-                    <span className="text-xl">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="mr-3">{item.icon}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                   </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div className="p-4 mt-auto">
-            <div className="flex items-center space-x-3">
-              <div className="bg-indigo-100 w-10 h-10 rounded-full flex items-center justify-center text-indigo-600 font-medium">
-                {session?.user?.name?.charAt(0) || 'U'}
-              </div>
-              <div>
-                <div className="font-medium text-gray-900">{session?.user?.name}</div>
-                <button 
-                  onClick={() => router.push('/api/auth/signout')}
-                  className="text-sm text-gray-500 hover:text-indigo-600"
-                >
-                  Sign Out
-                </button>
-              </div>
+                ))}
+              </nav>
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Main Content */}
+        
+        {/* Main content */}
         <div className="flex-1 p-6">
-          {/* Mobile Header */}
-          <div className="md:hidden flex justify-between items-center mb-6">
-            <div className="flex items-center gap-2">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 7.00018C22 7.00018 19.5 9.50018 17.5 9.50018C15.5 9.50018 14.5 7.50018 12.5 7.50018C10.5 7.50018 9.5 9.00018 7.5 9.00018C5.5 9.00018 2 7.00018 2 7.00018" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M22 12.0002C22 12.0002 19.5 14.5002 17.5 14.5002C15.5 14.5002 14.5 12.5002 12.5 12.5002C10.5 12.5002 9.5 14.0002 7.5 14.0002C5.5 14.0002 2 12.0002 2 12.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M22 17.0002C22 17.0002 19.5 19.5002 17.5 19.5002C15.5 19.5002 14.5 17.5002 12.5 17.5002C10.5 17.5002 9.5 19.0002 7.5 19.0002C5.5 19.0002 2 17.0002 2 17.0002" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="17" cy="5" r="2" fill="#4F46E5" />
-              </svg>
-              <h1 className="text-2xl font-bold text-indigo-600">Finny</h1>
-            </div>
-            <button className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
           </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
-
-          {activeSidebarItem === 'dashboard' && (
-            <div className="space-y-6">
-              <WelcomeIllustration />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <FinancialHealthCard score={healthScore} />
-                <SavingsGoalCard current={3200} target={5000} />
-                <div className="xl:col-span-1 md:col-span-2 col-span-1">
-                  <StreakTracker currentStreak={streak} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="col-span-2">
-                  <BudgetComparisonCard categories={budgetCategories} />
-                </div>
-                <div className="space-y-6">
-                  <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm text-gray-600">Monthly Income</div>
-                        <div className="text-xl font-bold text-green-600">${(afterTaxIncome / 12).toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-600">Monthly Expenses</div>
-                        <div className="text-xl font-bold text-red-600">${totalMonthlyExpenses.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-600">Remaining</div>
-                        <div className={`text-xl font-bold ${remainingIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          ${remainingIncome.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Daily Challenge</h2>
-                    <Challenge
-                      title="Review Expenses"
-                      description="Review and categorize today's expenses"
-                      progress={1}
-                      goal={1}
-                      reward={25}
-                      type="expense"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeSidebarItem === 'income' && (
-            <div className="space-y-6">
-              <Income />
-            </div>
-          )}
-
-          {activeSidebarItem === 'expenses' && (
-            <div className="space-y-6">
-              <Expenses />
-            </div>
-          )}
-
-          {activeSidebarItem === 'achievements' && (
-            <div>
-              <Achievements />
-            </div>
-          )}
         </div>
       </div>
     </div>
