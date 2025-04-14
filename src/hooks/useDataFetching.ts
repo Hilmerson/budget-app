@@ -8,12 +8,14 @@ import { useBudgetStore } from '@/store/useBudgetStore';
 type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 // Define interfaces for our API responses
-interface UserData {
+export interface UserData {
   id: string;
-  name?: string;
-  email: string;
+  name: string | null;
+  email: string | null;
   employmentMode: 'full-time' | 'contract' | 'other';
   income: number;
+  bio?: string; // Optional bio field
+  createdAt?: string | Date; // Make sure it can be either string or Date
 }
 
 interface ExperienceData {

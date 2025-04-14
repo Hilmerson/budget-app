@@ -24,6 +24,8 @@ export async function GET() {
         email: true,
         employmentMode: true,
         income: true,
+        bio: true,
+        createdAt: true,
       },
     });
 

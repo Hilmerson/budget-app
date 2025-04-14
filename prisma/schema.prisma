@@ -24,6 +24,7 @@ model User {
   password      String?
   emailVerified DateTime?
   image         String?
+  bio           String?   // User bio/about me text
   employmentMode String    @default("full-time")
   income        Float     @default(0)
   incomeFrequency String    @default("monthly")

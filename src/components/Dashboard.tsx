@@ -75,6 +75,13 @@ export default function Dashboard() {
     }
   }, [activeSidebarItem]);
 
+  // Redirect to profile page when that sidebar item is selected
+  useEffect(() => {
+    if (activeSidebarItem === 'profile') {
+      router.push('/profile');
+    }
+  }, [activeSidebarItem, router]);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -89,6 +96,13 @@ export default function Dashboard() {
       updateCalculations();
     }
   }, [userData, updateCalculations]);
+
+  // Refresh data when component mounts or when returning from profile page
+  useEffect(() => {
+    if (status === 'authenticated') {
+      refetchAll();
+    }
+  }, [status, refetchAll]);
 
   // Calculate total monthly expenses
   const totalMonthlyExpenses = expenses.reduce((sum, expense) => {
@@ -146,108 +160,58 @@ export default function Dashboard() {
     signOut({ callbackUrl: '/login' });
   };
 
-  // Main content based on active sidebar item
+  // Render content based on active sidebar item
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="w-full h-full flex flex-col items-center justify-center p-6">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600">Loading your financial dashboard...</p>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="w-full h-full flex flex-col items-center justify-center p-6">
-          <div className="text-red-500 text-xl mb-4">😕 {error}</div>
-          <button 
-            onClick={resetDataLoadingState} 
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      );
-    }
-
-    if (activeSidebarItem === 'dashboard') {
-      return (
-        <div className="space-y-6">
-          <WelcomeIllustration />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    switch (activeSidebarItem) {
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold">Welcome, {session?.user?.name || 'User'}!</h1>
             <FinancialHealthCard score={healthScore} />
-            <SavingsGoalCard current={3200} target={5000} />
-            <div className="xl:col-span-1 md:col-span-2 col-span-1">
-              <StreakTracker currentStreak={streak} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <BudgetComparisonCard categories={[
+                { name: 'Housing', budgeted: 1200, spent: 1150 },
+                { name: 'Food', budgeted: 500, spent: 480 },
+                { name: 'Transportation', budgeted: 300, spent: 250 },
+                { name: 'Entertainment', budgeted: 200, spent: 300 },
+              ]} />
+              <SavingsGoalCard current={3200} target={5000} />
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-2">
-              <BudgetComparisonCard categories={budgetCategories} />
-            </div>
-            <div className="space-y-6">
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm text-gray-600">Monthly Income</div>
-                    <div className="text-xl font-bold text-green-600">${(afterTaxIncome / 12).toLocaleString()}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Monthly Expenses</div>
-                    <div className="text-xl font-bold text-red-600">${totalMonthlyExpenses.toLocaleString()}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600">Remaining</div>
-                    <div className={`text-xl font-bold ${remainingIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${remainingIncome.toLocaleString()}
-                    </div>
-                  </div>
+        );
+      case 'income':
+        return <Income />;
+      case 'expenses':
+        return <Expenses />;
+      case 'achievements':
+        return (
+          <div className="space-y-8">
+            <h1 className="text-3xl font-bold">Achievements</h1>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Achievements />
+              </div>
+              <div>
+                <StreakTracker currentStreak={streak} />
+                <div className="mt-6">
+                  <Challenge 
+                    title="Budget Master"
+                    description="Stay under budget in all categories for a month"
+                    progress={80}
+                    goal={100}
+                    reward={150}
+                    type="budget"
+                  />
                 </div>
               </div>
-              
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Daily Challenge</h2>
-                <Challenge
-                  title="Review Expenses"
-                  description="Review and categorize today's expenses"
-                  progress={1}
-                  goal={1}
-                  reward={25}
-                  type="expense"
-                />
-              </div>
             </div>
           </div>
-        </div>
-      );
-    }
-
-    if (activeSidebarItem === 'income') {
-      return (
-        <div className="space-y-6">
-          <Income />
-        </div>
-      );
-    }
-
-    if (activeSidebarItem === 'expenses') {
-      return (
-        <div className="space-y-6">
-          <Expenses />
-        </div>
-      );
-    }
-
-    if (activeSidebarItem === 'achievements') {
-      return (
-        <div>
-          <Achievements />
-        </div>
-      );
+        );
+      case 'profile':
+        // Display loading indicator while redirecting
+        return <div className="text-center py-8">Loading profile...</div>;
+      default:
+        return <div>Select an option from the sidebar</div>;
     }
   };
 
@@ -265,13 +229,13 @@ export default function Dashboard() {
     );
   }
 
-  // Sidebar navigation items
+  // Sidebar items configuration
   const sidebarItems = [
-    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-    { id: 'income', icon: '💵', label: 'Income' },
-    { id: 'expenses', icon: '📝', label: 'Expenses' },
-    { id: 'achievements', icon: '🏆', label: 'Achievements' },
-    { id: 'settings', icon: '⚙️', label: 'Settings' },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'income', label: 'Income', icon: '💰' },
+    { id: 'expenses', label: 'Expenses', icon: '💸' },
+    { id: 'achievements', label: 'Achievements', icon: '🏆' },
+    { id: 'profile', label: 'Profile', icon: '👤' },
   ];
 
   return (
