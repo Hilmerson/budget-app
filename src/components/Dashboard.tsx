@@ -109,9 +109,13 @@ export default function Dashboard() {
   // Refresh data when component mounts or when returning from profile page
   useEffect(() => {
     if (status === 'authenticated') {
+      console.log('🔄 Dashboard: Refreshing all data...');
       refetchAll();
+      
+      // Log current gamification values from store
+      console.log(`🎮 Dashboard: Current gamification values - Level: ${level}, Experience: ${experience}, Next Level XP: ${nextLevelExperience}`);
     }
-  }, [status, refetchAll]);
+  }, [status, refetchAll, level, experience, nextLevelExperience]);
 
   // Calculate total monthly expenses
   const totalMonthlyExpenses = expenses.reduce((sum, expense) => {

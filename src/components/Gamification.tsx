@@ -108,17 +108,23 @@ export function Challenge({ title, description, progress, goal, reward, type, on
 }
 
 export function LevelProgress({ level, experience, nextLevelExperience }: LevelProgressProps) {
-  const percentage = Math.floor((experience / nextLevelExperience) * 100);
+  // Ensure nextLevelExperience is valid to prevent NaN% display
+  const safeNextLevelExp = nextLevelExperience && nextLevelExperience > 0 ? nextLevelExperience : 100;
+  
+  // Calculate percentage safely
+  const percentage = isNaN(experience) || isNaN(safeNextLevelExp) || safeNextLevelExp === 0
+    ? 0
+    : Math.min(Math.floor((experience / safeNextLevelExp) * 100), 100);
   
   return (
     <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <div className="text-xl font-bold">Level {level}</div>
+          <div className="text-xl font-bold">Level {level || 1}</div>
           <div className="text-indigo-200 text-sm">Financial Wizard</div>
         </div>
         <div className="bg-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
-          <span className="text-2xl font-bold text-indigo-700">{level}</span>
+          <span className="text-2xl font-bold text-indigo-700">{level || 1}</span>
         </div>
       </div>
       
@@ -154,12 +160,12 @@ export function LevelProgress({ level, experience, nextLevelExperience }: LevelP
       
       <div className="flex justify-between items-center">
         <div className="flex items-center">
-          <span className="text-sm font-bold text-yellow-300">{experience}</span>
+          <span className="text-sm font-bold text-yellow-300">{experience || 0}</span>
           <span className="text-xs text-indigo-200 mx-1">/</span>
-          <span className="text-xs text-indigo-200">{nextLevelExperience}</span>
+          <span className="text-xs text-indigo-200">{safeNextLevelExp}</span>
         </div>
         <div className="bg-indigo-800 bg-opacity-50 px-2 py-0.5 rounded text-xs font-medium text-indigo-100">
-          {percentage}% to Level {level + 1}
+          {percentage}% to Level {(level || 1) + 1}
         </div>
       </div>
     </div>

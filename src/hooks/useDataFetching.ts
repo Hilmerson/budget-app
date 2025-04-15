@@ -151,18 +151,67 @@ export function useExpenseData() {
 }
 
 export function useExperienceData() {
-  const { setExperience } = useBudgetStore();
+  const { setExperience, gamification } = useBudgetStore();
   const { data, isLoading, error, refetch } = useDataFetch<ExperienceData>('/api/user/experience');
 
   useEffect(() => {
-    if (data && data.experience !== undefined && data.level !== undefined) {
-      console.log(`✅ useExperienceData: Setting experience (${data.experience}) and level (${data.level}) in store`);
-      setExperience({
-        experience: data.experience,
-        level: data.level
-      });
+    if (data) {
+      console.log(`🎮 useExperienceData: Received from API - experience: ${data.experience}, level: ${data.level}`);
+      
+      // Compare with current store values before updating
+      const currentLevel = gamification.level;
+      const currentExp = gamification.experience;
+      
+      // Ensure API data is valid
+      const apiLevel = typeof data.level === 'number' && data.level > 0 ? data.level : 1;
+      const apiExperience = typeof data.experience === 'number' && data.experience >= 0 ? data.experience : 0;
+      
+      console.log(`🎮 useExperienceData: Current store values - level: ${currentLevel}, experience: ${currentExp}`);
+      console.log(`🎮 useExperienceData: API values after validation - level: ${apiLevel}, experience: ${apiExperience}`);
+      
+      // Only update if:
+      // 1. The current level is 1 (default) and API level is higher, OR
+      // 2. The API level is significantly different from current level, OR
+      // 3. Same level but significantly different XP
+      if ((currentLevel === 1 && apiLevel > currentLevel) || 
+          Math.abs(apiLevel - currentLevel) > 1 ||
+          (apiLevel === currentLevel && Math.abs(apiExperience - currentExp) > 50)) {
+            
+        console.log(`✅ useExperienceData: Updating store with API data - level: ${apiLevel}, experience: ${apiExperience}`);
+        setExperience({
+          experience: apiExperience,
+          level: apiLevel
+        });
+      } else {
+        console.log(`ℹ️ useExperienceData: Keeping current store values - level: ${currentLevel}, experience: ${currentExp}`);
+        
+        // If store has higher values than API, sync back to API
+        if ((currentLevel > apiLevel) || 
+            (currentLevel === apiLevel && currentExp > apiExperience)) {
+              
+          console.log(`🔄 useExperienceData: Syncing store values to API - level: ${currentLevel}, experience: ${currentExp}`);
+          
+          // Use setTimeout to avoid blocking the UI
+          setTimeout(async () => {
+            try {
+              await fetch('/api/user/experience', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                  experience: currentExp,
+                  level: currentLevel
+                }),
+              });
+            } catch (error) {
+              console.error('Error syncing experience to API:', error);
+            }
+          }, 100);
+        }
+      }
     }
-  }, [data, setExperience]);
+  }, [data, setExperience, gamification]);
 
   return { 
     experienceData: data, 
