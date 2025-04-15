@@ -1,11 +1,37 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { Achievements, Challenge, StreakTracker } from '@/components/Gamification';
 
 export default function AchievementsPage() {
-  // Get streak from store
-  const streak = useBudgetStore((state) => state.gamification.streak);
+  const [error, setError] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
+
+  // Load streak safely from store
+  useEffect(() => {
+    try {
+      const store = useBudgetStore.getState();
+      setStreak(store.gamification?.streak || 0);
+    } catch (e) {
+      console.error('Error loading streak:', e);
+      setError('Failed to load achievements data. Please try refreshing the page.');
+    }
+  }, []);
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-600 bg-red-50 rounded-lg">
+        {error}
+        <button 
+          onClick={() => window.location.reload()} 
+          className="ml-2 underline"
+        >
+          Refresh
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

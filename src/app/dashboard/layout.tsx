@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    redirect('/login');
+    redirect('/login?callbackUrl=/dashboard');
   }
 
   // Let the client component handle the layout with dynamic imports

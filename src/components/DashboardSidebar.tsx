@@ -33,7 +33,7 @@ export default function DashboardSidebar() {
     if (path.includes('/dashboard/income')) return 'income';
     if (path.includes('/dashboard/expenses')) return 'expenses';
     if (path.includes('/dashboard/achievements')) return 'achievements';
-    if (path.includes('/dashboard/profile') || path === '/profile') return 'profile';
+    if (path.includes('/profile')) return 'profile';
     return 'dashboard';
   };
 

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Login() {
@@ -11,6 +11,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get the callback URL from the query parameters
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +34,8 @@ export default function Login() {
         return;
       }
 
-      // Redirect to dashboard on successful login
-      router.push('/dashboard');
+      // Redirect to the callback URL or dashboard on successful login
+      router.push(callbackUrl);
     } catch (error) {
       setError('An error occurred during login');
       setIsLoading(false);
