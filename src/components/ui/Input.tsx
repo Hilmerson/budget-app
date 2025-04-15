@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, InputHTMLAttributes, ReactNode, useId } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -33,7 +33,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     disabled,
     ...props 
   }, ref) => {
-    const uniqueId = id || `input-${Math.random().toString(36).substring(2, 9)}`;
+    // Use React's useId hook for stable IDs across server/client
+    const reactId = useId();
+    const uniqueId = id || `input-${reactId}`;
     
     // Base container styles
     const containerStyles = fullWidth ? 'w-full' : '';

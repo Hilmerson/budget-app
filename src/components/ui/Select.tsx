@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, SelectHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, SelectHTMLAttributes, ReactNode, useId } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 export interface SelectOption {
@@ -42,7 +42,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     disabled,
     ...props 
   }, ref) => {
-    const uniqueId = id || `select-${Math.random().toString(36).substring(2, 9)}`;
+    // Use React's useId hook for stable IDs across server/client
+    const reactId = useId();
+    const uniqueId = id || `select-${reactId}`;
     
     // Base container styles
     const containerStyles = fullWidth ? 'w-full' : '';
