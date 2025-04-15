@@ -1,99 +1,123 @@
-# Finny Project Summary
+# Finny - Personal Budget App
 
-## Project Overview
-Finny (formerly BudgetWise) is a gamified budget application that helps users manage their finances while making the experience engaging through gamification elements. The application combines modern design with practical financial tools, incorporating elements like experience points, levels, streaks, and achievements to motivate users.
+## Overview
+Finny is a comprehensive personal finance management application built with Next.js, TypeScript, Tailwind CSS, and Prisma. The app helps users track income, expenses, and savings while providing visualizations and insights to improve financial health.
 
-## Key Features
+## Core Features
 
-### Core Functionality
-- **Employment Mode Selection**: Users can select between full-time, contract/freelance, or other employment modes
-- **Income Tracking**: Users can add income with various frequency options (one-time, weekly, bi-weekly, monthly, quarterly, yearly)
-- **Expense Management**: Users can add, categorize, and track expenses with frequency options
-- **Financial Metrics**: Calculation of tax estimates, after-tax income, and remaining income
-- **Goals**: Users can set savings goals with target amounts
+### Financial Management
+- Track income and expenses across multiple categories
+- Categorize transactions with custom tagging
+- Set and monitor monthly budget targets
+- Generate financial reports with insights
+- Calculate tax implications of income and expenses
 
-### Gamification Elements
-- **Experience Points**: Users earn XP for financial activities
-- **Level Progression**: Users level up based on accumulated XP with specific thresholds for each level
-- **XP Animation**: Visual feedback when users earn XP or level up
-- **Streaks**: Track consecutive days of financial activity
-- **Achievements/Badges**: Unlock achievements for financial milestones
-- **Challenges**: Daily/weekly challenges to encourage engagement
+### Dashboard & Visualization
+- Interactive charts showing spending patterns
+- Income vs. expense comparison views
+- Category-based breakdowns of financial activity
+- Historical trend analysis
+- Financial health scoring
 
-### UI Components
-- **Dashboard**: Central hub with overview of financial health and gamification stats
-- **Income Component**: Interface for managing income
-- **Expenses Component**: Interface for tracking and categorizing expenses
-- **Gamification Elements**: LevelProgress, StreakTracker, Achievements, Challenge components
-- **Illustration Components**: WelcomeIllustration, FinancialHealthCard, SavingsGoalCard, BudgetComparisonCard
+### User Experience
+- Modern, responsive UI that works across devices
+- Route-based navigation with persistent sidebar
+- Dark/light mode support
+- Progressive Web App (PWA) capabilities
+- Keyboard shortcuts for power users
+
+### Data & Security
+- Secure user authentication via NextAuth
+- Database integration through Prisma ORM
+- End-to-end data encryption for sensitive information
+- Automated backups and data recovery options
+- GDPR-compliant data handling
+
+### Gamification System
+- Experience points (XP) for consistent app usage
+- Level progression with increasing XP thresholds
+- Enhanced formula for level progression (base 100 XP + 50 XP growth factor per level)
+- Maximum level cap at Level 10 (3000+ XP)
+- Achievements for reaching financial milestones
+- Streak counters for daily engagement
+- Automatic level-up when XP thresholds are reached
+- Overflow XP handling when leveling up
+- Race condition prevention for rapid XP updates
+- Reliable client-server state synchronization
 
 ## Technical Stack
-- **Frontend**: Next.js with React
-- **State Management**: Zustand for global state
-- **Styling**: Tailwind CSS
-- **Database**: SQL Server with Prisma ORM
-- **Authentication**: NextAuth.js
 
-## Database Models
-- **User**: Basic user information, authentication, experience and level data
-- **Income**: Income entries with amount, frequency, and relationship to user
-- **Expense**: Expense entries with amount, category, frequency, and relationship to user
-- **Achievement**: User achievements and badges
-- **Experience**: User experience points and level tracking
-- **Goal**: User savings goals
+### Frontend
+- Next.js 13+ (with App Router)
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Chart.js for data visualization
+- React Context API and Zustand for state management
 
-## API Routes
-- **/api/auth/signup**: User registration
-- **/api/auth/[...nextauth]**: Authentication handling
-- **/api/income**: Income management endpoints
-- **/api/expenses**: Expense management endpoints
-- **/api/user/experience**: Experience points and level tracking
+### Backend
+- Next.js API routes
+- Prisma ORM for database operations
+- PostgreSQL database (production)
+- SQLite database (development)
+- RESTful API endpoints with proper error handling
 
-## State Management
-The application uses Zustand for state management with the following key stores:
-- **useBudgetStore**: Manages income, expenses, and experience/level progression
+### Authentication
+- NextAuth.js for authentication
+- Email/password and OAuth providers
+- Session management
+- Role-based access control
 
-## Navigation
-The application now uses Next.js route-based navigation:
-- `/dashboard` - Main dashboard
-- `/dashboard/income` - Income management
-- `/dashboard/expenses` - Expense management
-- `/dashboard/achievements` - User achievements
-- `/profile` - User profile
+### DevOps
+- CI/CD pipeline with GitHub Actions
+- Vercel deployment
+- Automated testing with Jest
+- Performance monitoring and error tracking
 
-## Recent Development History
-1. Initial application structure with NextAuth authentication
-2. Implementation of Zustand store for state management
-3. Development of basic income/expense tracking
-4. Addition of gamification elements
-5. Database integration with Prisma and SQL Server
-6. Comprehensive UI redesign with modern dashboard layout
-7. Fix for SQL Server enum compatibility by using strings
-8. Enhanced UI components with improved visibility and cursor styling 
-9. Rebranding from BudgetWise to Finny with fish-themed logo and slogan
-10. Migration from hash-based to route-based navigation
-11. Fixed XP/level system to correctly handle level progression
-12. Improved client-side state management with better server synchronization
-13. Added debug/test tools for XP and level management
+## Recent Improvements
 
-## Known Issues & Future Improvements
-- Further refinement of the financial health score calculation
-- More comprehensive gamification rewards system
-- Addition of spending analysis and trends charts
-- Integration with financial institutions (future)
+### Route-Based Navigation
+- Migrated from hash-based to route-based navigation
+- Implemented persistent sidebar across routes
+- Enhanced URL structure for better SEO and sharing
+- Optimized client-side navigation between features
 
-## Design Principles
-- Modern, clean UI with consistent spacing and typography
-- Gamification elements that are engaging but not distracting
-- Clear financial information presentation
-- Mobile-first responsive design
-- Accessible UI elements with proper contrast
+### Enhanced XP System
+- Improved formula for level progression (base 100 XP + 50 XP growth factor per level)
+- Fixed race conditions during rapid XP updates
+- Implemented automatic level-up when thresholds are reached
+- Added overflow XP handling for level-ups
+- Enhanced client-server synchronization to prevent level resets
+- Implemented useUserExperience hook for consistent data fetching
+- Added detailed developer tools for XP testing and debugging
 
-## Repository Information
-- GitHub repository: https://github.com/Hilmerson/budget-app.git
+### Financial Health Features
+- Added automated financial health scoring
+- Implemented trend analysis for spending patterns
+- Enhanced data visualization components
 
-## Documentation
-- **ROUTE_NAVIGATION.md**: Details on the route-based navigation implementation
-- **GAMIFICATION.md**: Documentation of the XP/level system and gamification features
+## Project Structure
+The project follows a feature-based organization within the Next.js 13+ App Router structure:
 
-This summary should provide enough context to quickly understand the project structure, features, and development history if the conversation context is lost. 
+```
+/src
+  /app - Next.js app router pages
+    /dashboard - Main application dashboard
+    /profile - User profile management
+    /api - Backend API endpoints
+  /components - Reusable UI components
+  /hooks - Custom React hooks
+  /lib - Utility functions and libraries
+  /store - State management (Zustand)
+  /types - TypeScript type definitions
+  /prisma - Database schema and migrations
+```
+
+## Future Roadmap
+- Investment tracking and performance monitoring
+- Intelligent savings recommendations
+- Bill payment reminders and scheduling
+- Integration with financial institutions
+- Mobile application with offline capabilities
+
+## Contributing
+Contributors are welcome to join the project. Please review the contributing guidelines in CONTRIBUTING.md before submitting pull requests. 
