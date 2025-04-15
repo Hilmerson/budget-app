@@ -36,11 +36,31 @@ Located at `src/components/DashboardSidebar.tsx`, this client component:
 - Shows the level progress bar
 - Provides sign-out functionality
 
-### Client-Side State Management
+### ClientWrapper
+
+Located at `src/components/ClientWrapper.tsx`, this client component:
+- Loads and handles client-side animations
+- Works with dynamically imported components in the server layout
+
+### Section Pages
+
+- `DashboardContent` - Main dashboard content (`/dashboard`)
+- `IncomePage` - Income management (`/dashboard/income`)
+- `ExpensesPage` - Expense management (`/dashboard/expenses`)
+- `AchievementsPage` - User achievements (`/dashboard/achievements`)
+
+## Client-Side State Management
 
 The XP gain animation and other client-side state is managed through:
 - `ClientWrapper` component containing animations
 - Zustand store for state persistence
+
+## TypeScript Compatibility
+
+The implementation ensures strong typing throughout the codebase:
+- Component props are properly typed
+- Route parameters are validated
+- Store access is type-safe
 
 ## Migrating From Hash-Based Navigation
 
