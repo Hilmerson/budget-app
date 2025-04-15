@@ -25,8 +25,15 @@ The app now uses Next.js's built-in routing system to navigate between different
 
 Located at `src/app/dashboard/layout.tsx`, this is a server component that:
 - Checks authentication
+- Ensures the user is logged in before displaying the dashboard
+- Uses the ClientSideLayout for rendering the UI
+
+### ClientSideLayout
+
+Located at `src/components/ClientSideLayout.tsx`, this client component:
+- Handles dynamic imports with `ssr: false`
 - Provides the structure shared by all dashboard pages
-- Dynamically loads client components as needed
+- Loads the sidebar and client wrapper components
 
 ### DashboardSidebar
 
@@ -73,6 +80,14 @@ To add a new dashboard section:
 1. Create a new page file at `src/app/dashboard/your-section/page.tsx`
 2. Add the section to the sidebar items array in `DashboardSidebar.tsx`
 3. Add a condition to `getActiveSectionFromPath` in `DashboardSidebar.tsx`
+
+## Next.js Server Component Considerations
+
+The implementation takes into account Next.js 15.3's restrictions on mixing server and client components:
+
+- Server components (like `layout.tsx`) handle authentication and redirects
+- Client components (like `ClientSideLayout.tsx`) handle dynamic imports and UI rendering
+- Client components with `'use client'` directive are needed for hooks and interactivity
 
 ## Future Improvements
 
