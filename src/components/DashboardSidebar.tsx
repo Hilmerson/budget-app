@@ -19,6 +19,7 @@ export default function DashboardSidebar() {
   const nextLevelExperience = store.gamification.nextLevelExperience;
   const xpGainAnimation = store.gamification.xpGainAnimation || { isVisible: false, amount: 0, isLevelUp: false };
   const hideXPGainAnimation = store.hideXPGainAnimation;
+  const checkLevelUp = store.checkLevelUp;
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -26,6 +27,12 @@ export default function DashboardSidebar() {
       router.push('/login');
     }
   }, [status, router]);
+  
+  // Check for level up when component loads
+  useEffect(() => {
+    // Check if user has enough XP to level up
+    checkLevelUp();
+  }, [checkLevelUp]);
 
   // Get active section from the current path
   const getActiveSectionFromPath = (path: string): string => {

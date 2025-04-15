@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { useDashboardData } from '@/hooks/useDataFetching';
+import { useEffect } from 'react';
 import { 
   FinancialHealthCard, 
   SavingsGoalCard,
@@ -13,13 +14,19 @@ export default function DashboardContent() {
   const { data: session } = useSession();
   
   // Get store values
-  const { addExperience } = useBudgetStore();
+  const { addExperience, checkLevelUp } = useBudgetStore();
   
   // Custom hook for fetching all data
   const { isLoading } = useDashboardData();
 
   // Get gamification state
   const healthScore = useBudgetStore((state) => state.gamification.healthScore);
+  
+  // Check for level up when component loads
+  useEffect(() => {
+    // Check if user has enough XP to level up
+    checkLevelUp();
+  }, [checkLevelUp]);
 
   if (isLoading) {
     return (

@@ -98,6 +98,7 @@ export interface BudgetState {
   // Gamification methods
   addExperience: (amount: number) => void;
   setExperience: (data: { experience: number, level: number }) => void;
+  checkLevelUp: () => boolean;
   updateGamification: () => void;
   setStreak: (streak: number) => void;
   setHealthScore: (score: number) => void;
@@ -389,76 +390,58 @@ export const useBudgetStore = create<BudgetState>()(
         // Show appropriate animation
         get().showXPGainAnimation(amount, willLevelUp);
         
-        set((state) => {
-          const currentExp = state.gamification.experience;
-          const currentLevel = state.gamification.level;
-          const currentLevelInfo = getLevelInfo(currentExp);
-          const newExperience = currentExp + amount;
-          
-          // Check if the user leveled up
-          const newLevelInfo = getLevelInfo(newExperience);
-          
-          // If the user leveled up, handle overflow XP
-          if (newLevelInfo.level > currentLevel) {
-            console.log(`🎮 Level up! ${currentLevel} -> ${newLevelInfo.level}`);
-            
-            // Calculate overflow XP
-            // For simplicity in the case of multiple level jumps, just take the remainder
-            // of the new experience over the level threshold
-            
-            // Get the XP threshold for the previous level
-            let previousLevelThreshold = 0;
-            switch (currentLevel) {
-              case 1: previousLevelThreshold = 0; break;
-              case 2: previousLevelThreshold = 100; break;
-              case 3: previousLevelThreshold = 250; break;
-              case 4: previousLevelThreshold = 450; break;
-              case 5: previousLevelThreshold = 700; break;
-              case 6: previousLevelThreshold = 1000; break;
-              case 7: previousLevelThreshold = 1350; break;
-              case 8: previousLevelThreshold = 1750; break;
-              case 9: previousLevelThreshold = 2200; break;
-              case 10: previousLevelThreshold = 2700; break;
-              default: previousLevelThreshold = (currentLevel - 1) * 350; break;
-            }
-            
-            // Calculate XP needed for this level
-            const xpForCurrentLevel = currentLevelInfo.nextLevelExperience - previousLevelThreshold;
-            
-            // Calculate how much XP was remaining to level up
-            const xpRemainingToLevelUp = currentLevelInfo.nextLevelExperience - currentExp;
-            
-            // Calculate overflow XP (the excess XP after leveling up)
-            const overflowXP = amount - xpRemainingToLevelUp;
-            
-            console.log(`🎮 Level up details:
-              - Previous level threshold: ${previousLevelThreshold}
-              - XP for current level: ${xpForCurrentLevel}
-              - XP needed to level up: ${xpRemainingToLevelUp}
-              - Overflow XP: ${overflowXP}
-            `);
-            
-            // For multi-level jumps, just use the level info from getLevelInfo
-            return {
-              gamification: {
-                ...state.gamification,
-                experience: newLevelInfo.level === currentLevel + 1 ? overflowXP : 0, // Use overflow for single level jump, reset for multiple
-                level: newLevelInfo.level,
-                nextLevelExperience: newLevelInfo.nextLevelExperience
-              }
-            };
+        // Update experience first
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            experience: newExperience
+          }
+        }));
+        
+        // Then check if we should level up (separate from animation)
+        if (willLevelUp) {
+          // Get the XP threshold for the previous level
+          let previousLevelThreshold = 0;
+          switch (currentLevel) {
+            case 1: previousLevelThreshold = 0; break;
+            case 2: previousLevelThreshold = 100; break;
+            case 3: previousLevelThreshold = 250; break;
+            case 4: previousLevelThreshold = 450; break;
+            case 5: previousLevelThreshold = 700; break;
+            case 6: previousLevelThreshold = 1000; break;
+            case 7: previousLevelThreshold = 1350; break;
+            case 8: previousLevelThreshold = 1750; break;
+            case 9: previousLevelThreshold = 2200; break;
+            case 10: previousLevelThreshold = 2700; break;
+            default: previousLevelThreshold = (currentLevel - 1) * 350; break;
           }
           
-          // No level up, just add XP normally
-          return { 
+          // Calculate XP needed for this level
+          const xpForCurrentLevel = currentState.gamification.nextLevelExperience - previousLevelThreshold;
+          
+          // Calculate how much XP was remaining to level up
+          const xpRemainingToLevelUp = currentState.gamification.nextLevelExperience - currentExp;
+          
+          // Calculate overflow XP (the excess XP after leveling up)
+          const overflowXP = amount - xpRemainingToLevelUp;
+          
+          console.log(`🎮 Level up details:
+            - Previous level threshold: ${previousLevelThreshold}
+            - XP for current level: ${xpForCurrentLevel}
+            - XP needed to level up: ${xpRemainingToLevelUp}
+            - Overflow XP: ${overflowXP}
+          `);
+          
+          // Update state with new level and overflow XP
+          set((state) => ({
             gamification: {
               ...state.gamification,
-              experience: newExperience,
+              experience: newLevelInfo.level === currentLevel + 1 ? Math.max(0, overflowXP) : 0, // Use overflow for single level jump, reset for multiple
               level: newLevelInfo.level,
               nextLevelExperience: newLevelInfo.nextLevelExperience
             }
-          };
-        });
+          }));
+        }
         
         // Save experience and level to the database
         const { gamification } = get();
@@ -494,23 +477,26 @@ export const useBudgetStore = create<BudgetState>()(
         console.log(`🎮 Setting experience: ${experience}, level: ${level}`);
         
         // Calculate next level threshold based on the level
-        let nextLevelExperience = 100; // Default fallback
+        const levelInfo = getLevelInfo(experience);
         
-        // Only calculate if level is valid
-        if (level && level > 0) {
-          nextLevelExperience = Math.round(100 * Math.pow(1.5, level - 1));
-        }
+        // If the server reports a different level than calculated locally,
+        // use the server level as it's the source of truth
+        const finalLevel = level || levelInfo.level;
+        const finalNextLevelExp = Math.round(100 * Math.pow(1.5, finalLevel - 1));
         
-        console.log(`🎮 Setting nextLevelExperience: ${nextLevelExperience} for level ${level}`);
+        console.log(`🎮 Setting nextLevelExperience: ${finalNextLevelExp} for level ${finalLevel}`);
         
         set((state) => ({
           gamification: {
             ...state.gamification,
             experience: experience || 0,
-            level: level || 1,
-            nextLevelExperience: nextLevelExperience
+            level: finalLevel,
+            nextLevelExperience: finalNextLevelExp
           }
         }));
+        
+        // Check if we need to level up immediately (if XP >= threshold)
+        get().checkLevelUp();
       },
       
       updateGamification: () => {
@@ -599,6 +585,38 @@ export const useBudgetStore = create<BudgetState>()(
             }
           }
         }));
+      },
+      
+      checkLevelUp: () => {
+        const { gamification } = get();
+        const currentLevel = gamification.level;
+        const currentExp = gamification.experience;
+        const currentLevelInfo = getLevelInfo(currentExp);
+        
+        // Check if the user has enough experience to level up
+        if (currentExp >= currentLevelInfo.nextLevelExperience) {
+          console.log(`🎮 Level up! ${currentLevel} -> ${currentLevel + 1}`);
+          
+          // Calculate overflow XP
+          const overflowXP = currentExp - currentLevelInfo.nextLevelExperience;
+          
+          // Update level and experience
+          set((state) => ({
+            gamification: {
+              ...state.gamification,
+              level: currentLevel + 1,
+              experience: overflowXP,
+              nextLevelExperience: getLevelInfo(overflowXP).nextLevelExperience
+            }
+          }));
+          
+          // Show level up animation
+          get().showXPGainAnimation(overflowXP, true);
+          
+          return true;
+        }
+        
+        return false;
       }
     }),
     {
