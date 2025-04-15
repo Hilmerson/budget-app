@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useBudgetStore } from '@/store/useBudgetStore';
 import { Achievements, Challenge, StreakTracker } from '@/components/Gamification';
 

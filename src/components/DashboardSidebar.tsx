@@ -17,7 +17,7 @@ export default function DashboardSidebar() {
   const level = store.gamification.level;
   const experience = store.gamification.experience;
   const nextLevelExperience = store.gamification.nextLevelExperience;
-  const xpGainAnimation = store.gamification.xpGainAnimation || { isVisible: false, amount: 0 };
+  const xpGainAnimation = store.gamification.xpGainAnimation || { isVisible: false, amount: 0, isLevelUp: false };
   const hideXPGainAnimation = store.hideXPGainAnimation;
 
   // Redirect if not authenticated
@@ -28,19 +28,19 @@ export default function DashboardSidebar() {
   }, [status, router]);
 
   // Get active section from the current path
-  const getActiveSectionFromPath = (path: string) => {
+  const getActiveSectionFromPath = (path: string): string => {
     if (path === '/dashboard') return 'dashboard';
     if (path.includes('/dashboard/income')) return 'income';
     if (path.includes('/dashboard/expenses')) return 'expenses';
     if (path.includes('/dashboard/achievements')) return 'achievements';
-    if (path.includes('/dashboard/profile')) return 'profile';
+    if (path.includes('/dashboard/profile') || path === '/profile') return 'profile';
     return 'dashboard';
   };
 
-  const activeSection = getActiveSectionFromPath(pathname);
+  const activeSection = getActiveSectionFromPath(pathname || '');
 
   // Get user initials for avatar
-  const getUserInitials = () => {
+  const getUserInitials = (): string => {
     if (!session?.user?.name) return '?';
     
     const nameParts = session.user.name.split(' ');
@@ -69,7 +69,7 @@ export default function DashboardSidebar() {
       <XPGainAnimation 
         amount={xpGainAnimation.amount}
         isVisible={xpGainAnimation.isVisible}
-        isLevelUp={xpGainAnimation.isLevelUp}
+        isLevelUp={xpGainAnimation.isLevelUp || false}
         onAnimationComplete={hideXPGainAnimation}
       />
       

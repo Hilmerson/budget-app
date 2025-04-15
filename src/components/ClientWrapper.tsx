@@ -5,7 +5,11 @@ import { useBudgetStore } from '@/store/useBudgetStore';
 
 export default function ClientWrapper() {
   const store = useBudgetStore();
-  const xpGainAnimation = store.gamification.xpGainAnimation || { isVisible: false, amount: 0 };
+  const xpGainAnimation = store.gamification.xpGainAnimation || { 
+    isVisible: false, 
+    amount: 0, 
+    isLevelUp: false 
+  };
   const hideXPGainAnimation = store.hideXPGainAnimation;
 
   return (
@@ -14,7 +18,7 @@ export default function ClientWrapper() {
       <XPGainAnimation 
         amount={xpGainAnimation.amount}
         isVisible={xpGainAnimation.isVisible}
-        isLevelUp={xpGainAnimation.isLevelUp}
+        isLevelUp={xpGainAnimation.isLevelUp || false}
         onAnimationComplete={hideXPGainAnimation}
       />
     </>
