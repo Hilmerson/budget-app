@@ -23,8 +23,6 @@ export default function DashboardContent() {
 
   // Get gamification state
   const healthScore = useBudgetStore((state) => state.gamification.healthScore);
-  const experience = useBudgetStore((state) => state.gamification.experience);
-  const level = useBudgetStore((state) => state.gamification.level);
   
   // Check for level up when component loads
   useEffect(() => {
@@ -32,15 +30,15 @@ export default function DashboardContent() {
     checkLevelUp();
   }, [checkLevelUp]);
 
-  // Handle XP gain with server sync
+  // Handle XP gain with server sync (keep this for future use but remove from UI)
   const handleXpGain = async (amount: number) => {
     // First add XP locally
     addExperience(amount);
     
-    // Then after a delay, fetch from server to ensure sync
+    // Then after a longer delay, fetch from server to ensure sync
     setTimeout(() => {
       fetchExperience();
-    }, 500);
+    }, 1500); // Increased from 500ms to 1500ms
   };
 
   if (isLoading) {
@@ -58,42 +56,6 @@ export default function DashboardContent() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Welcome, {session?.user?.name || 'User'}!</h1>
-      
-      {/* Debug panel with current XP and level */}
-      <div className="bg-indigo-50 p-4 rounded-lg">
-        <p className="text-sm font-medium text-indigo-800 mb-2">Debug Info</p>
-        <p className="text-sm">Current Level: {level} | XP: {experience}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button 
-            onClick={() => handleXpGain(5)} 
-            className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm"
-            aria-label="Add 5 XP"
-          >
-            +5 XP
-          </button>
-          <button 
-            onClick={() => handleXpGain(10)} 
-            className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm"
-            aria-label="Add 10 XP"
-          >
-            +10 XP
-          </button>
-          <button 
-            onClick={() => handleXpGain(25)} 
-            className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm"
-            aria-label="Add 25 XP"
-          >
-            +25 XP
-          </button>
-          <button 
-            onClick={() => handleXpGain(50)} 
-            className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm"
-            aria-label="Add 50 XP"
-          >
-            +50 XP
-          </button>
-        </div>
-      </div>
       
       <FinancialHealthCard score={healthScore} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { useBudgetStore } from '@/store/useBudgetStore';
+import { useSession } from 'next-auth/react';
 
 // Define type for frequency
 type Frequency = 'one-time' | 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly';
@@ -156,8 +157,6 @@ export function useExperienceData() {
 
   useEffect(() => {
     if (data) {
-      console.log(`🎮 useExperienceData: Received from API - experience: ${data.experience}, level: ${data.level}`);
-      
       // Compare with current store values before updating
       const currentLevel = gamification.level;
       const currentExp = gamification.experience;
@@ -166,9 +165,6 @@ export function useExperienceData() {
       const apiLevel = typeof data.level === 'number' && data.level > 0 ? data.level : 1;
       const apiExperience = typeof data.experience === 'number' && data.experience >= 0 ? data.experience : 0;
       
-      console.log(`🎮 useExperienceData: Current store values - level: ${currentLevel}, experience: ${currentExp}`);
-      console.log(`🎮 useExperienceData: API values after validation - level: ${apiLevel}, experience: ${apiExperience}`);
-      
       // Only update if:
       // 1. The current level is 1 (default) and API level is higher, OR
       // 2. The API level is significantly different from current level, OR
@@ -176,21 +172,14 @@ export function useExperienceData() {
       if ((currentLevel === 1 && apiLevel > currentLevel) || 
           Math.abs(apiLevel - currentLevel) > 1 ||
           (apiLevel === currentLevel && Math.abs(apiExperience - currentExp) > 50)) {
-            
-        console.log(`✅ useExperienceData: Updating store with API data - level: ${apiLevel}, experience: ${apiExperience}`);
         setExperience({
           experience: apiExperience,
           level: apiLevel
-        });
+        }, true); // Skip database sync to prevent loops
       } else {
-        console.log(`ℹ️ useExperienceData: Keeping current store values - level: ${currentLevel}, experience: ${currentExp}`);
-        
         // If store has higher values than API, sync back to API
         if ((currentLevel > apiLevel) || 
             (currentLevel === apiLevel && currentExp > apiExperience)) {
-              
-          console.log(`🔄 useExperienceData: Syncing store values to API - level: ${currentLevel}, experience: ${currentExp}`);
-          
           // Use setTimeout to avoid blocking the UI
           setTimeout(async () => {
             try {
@@ -248,4 +237,52 @@ export function useDashboardData() {
     error,
     refetchAll
   };
-} 
+}
+
+export const useUserExperience = () => {
+  const { data: session, status } = useSession();
+  const setExperience = useBudgetStore((state) => state.setExperience);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const fetchExperience = useCallback(async () => {
+    if (status !== 'authenticated') return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/user/experience');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch experience data');
+      }
+      
+      const data = await response.json();
+      
+      // Update the store with the latest experience and level
+      // Use skipDatabaseSync=true to prevent creating an update loop
+      setExperience({
+        experience: data.experience,
+        level: data.level
+      }, true); // Skip database sync when fetching from API
+      
+      return data;
+    } catch (err) {
+      console.error('Error fetching experience:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [status, setExperience]);
+  
+  // Fetch data when the session is authenticated
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchExperience();
+    }
+  }, [status, fetchExperience]);
+  
+  return { isLoading, error, fetchExperience };
+}; 
