@@ -5,8 +5,24 @@ import { useState } from 'react';
 import Expenses from './Expenses';
 
 export default function IncomeInput() {
-  const { income, setIncome, taxBracket, taxAmount, afterTaxIncome, setConfirmed } = useBudgetStore();
+  const { 
+    setConfirmed,
+    calculations: { taxBracket, taxAmount, afterTaxIncome }
+  } = useBudgetStore();
+  
+  const [income, setLocalIncome] = useState<number>(0);
   const [isConfirmed, setIsConfirmed] = useState(false);
+
+  const setIncome = (value: number) => {
+    setLocalIncome(value);
+    useBudgetStore.getState().addIncome({
+      id: 'primary-income',
+      source: 'Primary Income',
+      amount: value,
+      frequency: 'yearly',
+      date: new Date().toISOString()
+    });
+  };
 
   const handleConfirm = () => {
     setIsConfirmed(true);
