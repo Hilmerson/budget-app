@@ -14,7 +14,8 @@ Finny (formerly BudgetWise) is a gamified budget application that helps users ma
 
 ### Gamification Elements
 - **Experience Points**: Users earn XP for financial activities
-- **Level Progression**: Users level up as they earn experience
+- **Level Progression**: Users level up based on accumulated XP with specific thresholds for each level
+- **XP Animation**: Visual feedback when users earn XP or level up
 - **Streaks**: Track consecutive days of financial activity
 - **Achievements/Badges**: Unlock achievements for financial milestones
 - **Challenges**: Daily/weekly challenges to encourage engagement
@@ -34,7 +35,7 @@ Finny (formerly BudgetWise) is a gamified budget application that helps users ma
 - **Authentication**: NextAuth.js
 
 ## Database Models
-- **User**: Basic user information and authentication
+- **User**: Basic user information, authentication, experience and level data
 - **Income**: Income entries with amount, frequency, and relationship to user
 - **Expense**: Expense entries with amount, category, frequency, and relationship to user
 - **Achievement**: User achievements and badges
@@ -46,11 +47,19 @@ Finny (formerly BudgetWise) is a gamified budget application that helps users ma
 - **/api/auth/[...nextauth]**: Authentication handling
 - **/api/income**: Income management endpoints
 - **/api/expenses**: Expense management endpoints
-- **/api/user/experience**: Experience points tracking
+- **/api/user/experience**: Experience points and level tracking
 
 ## State Management
 The application uses Zustand for state management with the following key stores:
 - **useBudgetStore**: Manages income, expenses, and experience/level progression
+
+## Navigation
+The application now uses Next.js route-based navigation:
+- `/dashboard` - Main dashboard
+- `/dashboard/income` - Income management
+- `/dashboard/expenses` - Expense management
+- `/dashboard/achievements` - User achievements
+- `/profile` - User profile
 
 ## Recent Development History
 1. Initial application structure with NextAuth authentication
@@ -62,13 +71,16 @@ The application uses Zustand for state management with the following key stores:
 7. Fix for SQL Server enum compatibility by using strings
 8. Enhanced UI components with improved visibility and cursor styling 
 9. Rebranding from BudgetWise to Finny with fish-themed logo and slogan
+10. Migration from hash-based to route-based navigation
+11. Fixed XP/level system to correctly handle level progression
+12. Improved client-side state management with better server synchronization
+13. Added debug/test tools for XP and level management
 
 ## Known Issues & Future Improvements
-- Cursor styling needs further refinement
-- Income/expense data storage to database needs completion
-- Mobile responsiveness can be improved in some areas
-- Additional dashboard widgets for financial insights
+- Further refinement of the financial health score calculation
 - More comprehensive gamification rewards system
+- Addition of spending analysis and trends charts
+- Integration with financial institutions (future)
 
 ## Design Principles
 - Modern, clean UI with consistent spacing and typography
@@ -79,5 +91,9 @@ The application uses Zustand for state management with the following key stores:
 
 ## Repository Information
 - GitHub repository: https://github.com/Hilmerson/budget-app.git
+
+## Documentation
+- **ROUTE_NAVIGATION.md**: Details on the route-based navigation implementation
+- **GAMIFICATION.md**: Documentation of the XP/level system and gamification features
 
 This summary should provide enough context to quickly understand the project structure, features, and development history if the conversation context is lost. 
