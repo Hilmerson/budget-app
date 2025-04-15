@@ -159,47 +159,59 @@ const getLevelInfo = (experience: number): { level: number, nextLevelExperience:
   // Ensure experience is a valid number
   const safeExperience = isNaN(experience) || experience < 0 ? 0 : experience;
   
-  // Define base values for XP calculation
-  const baseXP = 100;
-  const growthFactor = 50;
-  const maxLevel = 30; // Arbitrary high number for maximum level
-  
-  // Calculate level based on formula instead of hardcoded thresholds
-  let level = 1;
-  let xpThreshold = 0;
+  // Define the actual thresholds we want to use - these match the previous hardcoded values
+  // but are now in a more maintainable array format
+  const levelThresholds = [
+    0,     // Level 1 starts at 0
+    100,   // Level 2 threshold
+    250,   // Level 3 threshold
+    450,   // Level 4 threshold
+    700,   // Level 5 threshold
+    1000,  // Level 6 threshold
+    1350,  // Level 7 threshold
+    1750,  // Level 8 threshold
+    2200,  // Level 9 threshold
+    2700,  // Level 10 threshold
+    3000   // Level 11+ threshold (can add more later for higher levels)
+  ];
   
   console.log(`🔢 Level calculation starting with safeExperience: ${safeExperience}`);
   
-  for (let i = 1; i <= maxLevel; i++) {
-    // Calculate threshold for this level
-    const levelThreshold = baseXP + ((i - 1) * growthFactor);
-    xpThreshold += levelThreshold;
-    
-    console.log(`👉 Level ${i} requires total XP: ${xpThreshold} (this level: ${levelThreshold})`);
-    
-    // If we haven't reached this total XP yet, we found our level
-    if (safeExperience < xpThreshold) {
-      level = i;
-      console.log(`✅ Found level: ${level} for XP: ${safeExperience} (threshold: ${xpThreshold})`);
+  // Determine level based on experience
+  let level = 1;
+  for (let i = 1; i < levelThresholds.length; i++) {
+    if (safeExperience >= levelThresholds[i]) {
+      level = i + 1;
+      console.log(`👉 XP ${safeExperience} >= threshold ${levelThresholds[i]}, setting level to ${level}`);
+    } else {
       break;
     }
   }
   
-  // Calculate next level threshold using consistent formula
+  console.log(`✅ Found level: ${level} for XP: ${safeExperience}`);
+  
+  // Calculate the XP needed for next level
   let nextLevelExperience: number;
   
-  if (level >= maxLevel) {
-    // Max level, just set a high value
-    nextLevelExperience = 3000;
+  if (level >= levelThresholds.length) {
+    // Max level, use last defined threshold
+    nextLevelExperience = levelThresholds[levelThresholds.length - 1];
   } else {
-    // For regular levels, calculate based on the next level
-    nextLevelExperience = baseXP + ((level - 1) * growthFactor);
+    // Get threshold for next level
+    const currentLevelThreshold = levelThresholds[level - 1];
+    const nextLevelThreshold = levelThresholds[level];
+    
+    // The XP needed for next level is the difference between current XP and the next threshold
+    nextLevelExperience = nextLevelThreshold - safeExperience;
+    
+    console.log(`🎯 Current level ${level} threshold: ${currentLevelThreshold}, Next level threshold: ${nextLevelThreshold}`);
+    console.log(`🎯 XP needed for next level: ${nextLevelExperience} (${nextLevelThreshold} - ${safeExperience})`);
   }
   
   // Ensure we never return zero or negative values
-  nextLevelExperience = Math.max(100, nextLevelExperience);
+  nextLevelExperience = Math.max(50, nextLevelExperience);
   
-  console.log(`🎮 getLevelInfo result: Level ${level}, Next Level XP: ${nextLevelExperience}`);
+  console.log(`🎮 getLevelInfo result: Level ${level}, Next Level XP needed: ${nextLevelExperience}`);
   
   return { level, nextLevelExperience };
 };
@@ -662,42 +674,43 @@ export const useBudgetStore = create<BudgetState>()(
         const { gamification } = get();
         const currentLevel = gamification.level;
         const currentExp = gamification.experience;
-        const currentLevelInfo = getLevelInfo(currentExp);
         
-        console.log(`🔍 checkLevelUp: Current Level: ${currentLevel}, XP: ${currentExp}, Next Level XP: ${gamification.nextLevelExperience}`);
+        console.log(`🔍 checkLevelUp: Current Level: ${currentLevel}, XP: ${currentExp}, Next Level XP needed: ${gamification.nextLevelExperience}`);
+        
+        // Get the level info based on current XP
+        const currentLevelInfo = getLevelInfo(currentExp);
         console.log(`🔍 checkLevelUp: Calculated level from formula: ${currentLevelInfo.level}`);
         
-        // Check if the user has enough experience to level up
-        if (currentExp >= currentLevelInfo.nextLevelExperience) {
-          console.log(`🆙 LEVEL UP triggered in checkLevelUp! ${currentLevel} -> ${currentLevel + 1}`);
-          console.log(`🆙 Current XP: ${currentExp}, Needed for next level: ${currentLevelInfo.nextLevelExperience}`);
+        // Check if calculated level is higher than current level
+        if (currentLevelInfo.level > currentLevel) {
+          console.log(`🆙 LEVEL UP triggered in checkLevelUp! ${currentLevel} -> ${currentLevelInfo.level}`);
           
-          // Calculate overflow XP
-          const overflowXP = currentExp - currentLevelInfo.nextLevelExperience;
-          console.log(`🔢 Overflow XP after level up: ${overflowXP}`);
+          // Define the actual thresholds - matching the ones in getLevelInfo
+          const levelThresholds = [
+            0,     // Level 1 starts at 0
+            100,   // Level 2 threshold
+            250,   // Level 3 threshold
+            450,   // Level 4 threshold
+            700,   // Level 5 threshold
+            1000,  // Level 6 threshold
+            1350,  // Level 7 threshold
+            1750,  // Level 8 threshold
+            2200,  // Level 9 threshold
+            2700,  // Level 10 threshold
+            3000   // Level 11+ threshold
+          ];
           
-          // Calculate new nextLevelExperience using consistent formula
-          const baseXP = 100;
-          const growthFactor = 50; // Add 50 XP per level
-          const newLevel = currentLevel + 1;
-          const newNextLevelExp = newLevel === 10 
-            ? 3000 // Max level cap
-            : baseXP + ((newLevel - 1) * growthFactor);
-          
-          console.log(`🎮 New nextLevelExperience: ${newNextLevelExp} for level ${newLevel}`);
-          
-          // Update level and experience
+          // Update level and set XP to current amount (no reset/overflow needed)
           set((state) => ({
             gamification: {
               ...state.gamification,
-              level: newLevel,
-              experience: overflowXP,
-              nextLevelExperience: newNextLevelExp
+              level: currentLevelInfo.level,
+              nextLevelExperience: currentLevelInfo.nextLevelExperience
             }
           }));
           
           // Show level up animation
-          get().showXPGainAnimation(overflowXP, true);
+          get().showXPGainAnimation(0, true);
           
           return true;
         }
