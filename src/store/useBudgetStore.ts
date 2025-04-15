@@ -99,6 +99,7 @@ export interface BudgetState {
   addExperience: (amount: number) => void;
   setExperience: (data: { experience: number, level: number }, skipDatabaseSync?: boolean) => void;
   checkLevelUp: () => boolean;
+  resetExperience: () => void;
   updateGamification: (updates?: Partial<GamificationState>) => void;
   setStreak: (streak: number) => void;
   setHealthScore: (score: number) => void;
@@ -530,6 +531,39 @@ export const useBudgetStore = create<BudgetState>()(
             }
           }, 100);
         }
+      },
+      
+      resetExperience: () => {
+        console.log('Resetting experience to Level 1 with 0 XP');
+        
+        // Set level to 1 and XP to 0 in the store
+        set((state) => ({
+          gamification: {
+            ...state.gamification,
+            level: 1,
+            experience: 0,
+            nextLevelExperience: getXpRequiredForLevel(1)
+          }
+        }));
+        
+        // Update the database
+        setTimeout(async () => {
+          try {
+            await fetch('/api/user/experience', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                experience: 0,
+                level: 1
+              }),
+            });
+            console.log('Reset experience saved to database');
+          } catch (error) {
+            console.error('Error resetting experience:', error);
+          }
+        }, 100);
       },
       
       checkLevelUp: () => {
