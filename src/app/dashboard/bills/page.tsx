@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarDaysIcon, BanknotesIcon, PlusCircleIcon, ChevronRightIcon, ExclamationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CalendarDaysIcon, BanknotesIcon, PlusCircleIcon, ChevronRightIcon, ExclamationCircleIcon, CheckCircleIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import BillForm from '@/components/bills/BillForm';
 import BillCard from '@/components/bills/BillCard';
+import BillCalendar from '@/components/bills/BillCalendar';
 import Button from '@/components/ui/Button';
 import Loading from '@/components/ui/Loading';
 
@@ -27,6 +28,7 @@ interface Bill {
   paymentHistory: PaymentHistory[];
   createdAt: string;
   updatedAt: string;
+  isPinned?: boolean;
 }
 
 interface PaymentHistory {
@@ -36,6 +38,22 @@ interface PaymentHistory {
   notes?: string;
   method?: string;
 }
+
+// Categories for bills - must match those in BillForm
+const BILL_CATEGORIES = [
+  'Housing',
+  'Utilities',
+  'Internet',
+  'Phone',
+  'Insurance',
+  'Subscriptions',
+  'Loan',
+  'Credit Card',
+  'Transportation',
+  'Healthcare',
+  'Education',
+  'Other'
+];
 
 export default function BillsPage() {
   const [bills, setBills] = useState<Bill[]>([]);
@@ -52,6 +70,10 @@ export default function BillsPage() {
     upcoming: false,
     paid: false,
   });
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [showBillDetails, setShowBillDetails] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   
   const fetchBills = async () => {
     try {
@@ -128,15 +150,67 @@ export default function BillsPage() {
     }
   };
   
+  const handlePinChange = async (billId: string, isPinned: boolean) => {
+    try {
+      // Update local state immediately for responsive UI
+      setBills(prev => 
+        prev.map(bill => 
+          bill.id === billId ? { ...bill, isPinned } : bill
+        )
+      );
+      
+      // Update on server
+      const response = await fetch(`/api/bills/${billId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isPinned }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update bill');
+      }
+    } catch (err) {
+      console.error('Error updating bill pin status:', err);
+      setError('Failed to update bill. Please try again.');
+      // Revert local change on error
+      fetchBills();
+    }
+  };
+  
   // Group bills by their status
   const upcomingBills = bills.filter(bill => bill.status === 'upcoming');
   const overdueBills = bills.filter(bill => bill.status === 'overdue');
   const paidBills = bills.filter(bill => bill.status === 'paid');
   
-  // Sort bills by due date (closest first)
-  const sortedUpcomingBills = [...upcomingBills].sort((a, b) => 
-    new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-  );
+  // Filter bills by category if selected
+  const filterBillsByCategory = (bills: Bill[]) => {
+    if (!selectedCategory) return bills;
+    return bills.filter(bill => bill.category === selectedCategory);
+  };
+  
+  // Apply category filter to all bill lists
+  const filteredUpcomingBills = filterBillsByCategory(upcomingBills);
+  const filteredOverdueBills = filterBillsByCategory(overdueBills);
+  const filteredPaidBills = filterBillsByCategory(paidBills);
+  
+  // Sort bills by pin status first, then by due date
+  const sortBills = (bills: Bill[]) => {
+    return [...bills].sort((a, b) => {
+      // Pinned bills first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      
+      // Then sort by due date
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+  };
+  
+  // Sort bills by pin status and due date
+  const sortedUpcomingBills = sortBills(filteredUpcomingBills);
+  const sortedOverdueBills = sortBills(filteredOverdueBills);
+  const sortedPaidBills = sortBills(filteredPaidBills);
   
   const todayFormatted = new Date().toLocaleDateString();
   
@@ -171,6 +245,25 @@ export default function BillsPage() {
     });
   };
   
+  const handleBillClick = (billId: string) => {
+    const bill = bills.find(b => b.id === billId);
+    if (bill) {
+      setSelectedBill(bill);
+      setShowBillDetails(true);
+    }
+  };
+  
+  // Set a category filter
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category === selectedCategory ? null : category);
+    setShowCategoryFilter(false);
+  };
+  
+  // Clear category filter
+  const clearCategoryFilter = () => {
+    setSelectedCategory(null);
+  };
+  
   return (
     <div className="h-full w-full py-6">
       <div className="flex justify-between items-center mb-6">
@@ -195,6 +288,45 @@ export default function BillsPage() {
             <CalendarDaysIcon className="h-5 w-5 mr-1" />
             Calendar
           </Button>
+          <div className="relative">
+            <Button
+              variant={selectedCategory ? 'success' : 'secondary'}
+              onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+              className="flex items-center"
+            >
+              <FunnelIcon className="h-5 w-5 mr-1" />
+              {selectedCategory || 'Filter'}
+              {selectedCategory && (
+                <XMarkIcon 
+                  className="h-4 w-4 ml-1" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearCategoryFilter();
+                  }}
+                />
+              )}
+            </Button>
+            
+            {showCategoryFilter && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                <div className="py-1">
+                  {BILL_CATEGORIES.map(category => (
+                    <button
+                      key={category}
+                      className={`block px-4 py-2 text-sm w-full text-left ${
+                        selectedCategory === category 
+                          ? 'bg-indigo-50 text-indigo-700' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                      onClick={() => handleCategorySelect(category)}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <Button
             variant="success"
             onClick={handleAddBill}
@@ -205,6 +337,22 @@ export default function BillsPage() {
           </Button>
         </div>
       </div>
+      
+      {/* Active filters display */}
+      {selectedCategory && (
+        <div className="mb-4 flex items-center">
+          <span className="text-sm text-gray-500 mr-2">Filtered by:</span>
+          <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full flex items-center">
+            {selectedCategory}
+            <button 
+              onClick={clearCategoryFilter} 
+              className="ml-1 text-indigo-600 hover:text-indigo-800"
+            >
+              <XMarkIcon className="h-3 w-3" />
+            </button>
+          </span>
+        </div>
+      )}
       
       {error && (
         <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
@@ -221,20 +369,19 @@ export default function BillsPage() {
         <>
           {viewMode === 'list' ? (
             <div className="space-y-6">
-              {/* Today's date */}
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                 <p className="text-blue-800 font-medium">Today: {todayFormatted}</p>
               </div>
               
               {/* Overdue bills section */}
-              {overdueBills.length > 0 && (
+              {sortedOverdueBills.length > 0 && (
                 <div className="bg-red-50 p-4 rounded-lg border border-red-100">
                   <h2 
                     className="text-lg font-semibold text-red-800 mb-2 flex items-center cursor-pointer" 
                     onClick={() => toggleSection('overdue')}
                   >
                     <ExclamationCircleIcon className="h-5 w-5 mr-2" />
-                    Overdue ({overdueBills.length})
+                    Overdue ({sortedOverdueBills.length})
                     <ChevronRightIcon 
                       className={`h-5 w-5 ml-2 transition-transform ${collapsedSections.overdue ? '' : 'transform rotate-90'}`} 
                     />
@@ -247,12 +394,13 @@ export default function BillsPage() {
                       animate="visible"
                       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                     >
-                      {overdueBills.map(bill => (
+                      {sortedOverdueBills.map(bill => (
                         <motion.div key={bill.id} variants={itemVariants}>
                           <BillCard
                             bill={bill}
                             onStatusChange={handlePaidStatusChange}
                             onDelete={handleDeleteBill}
+                            onPin={handlePinChange}
                           />
                         </motion.div>
                       ))}
@@ -287,6 +435,7 @@ export default function BillsPage() {
                             bill={bill}
                             onStatusChange={handlePaidStatusChange}
                             onDelete={handleDeleteBill}
+                            onPin={handlePinChange}
                           />
                         </motion.div>
                       ))}
@@ -296,14 +445,14 @@ export default function BillsPage() {
               )}
               
               {/* Recently paid bills section */}
-              {paidBills.length > 0 && (
+              {sortedPaidBills.length > 0 && (
                 <div className="bg-green-50 p-4 rounded-lg border border-green-100">
                   <h2 
                     className="text-lg font-semibold text-green-800 mb-2 flex items-center cursor-pointer"
                     onClick={() => toggleSection('paid')}
                   >
                     <CheckCircleIcon className="h-5 w-5 mr-2" />
-                    Paid ({paidBills.length})
+                    Paid ({sortedPaidBills.length})
                     <ChevronRightIcon 
                       className={`h-5 w-5 ml-2 transition-transform ${collapsedSections.paid ? '' : 'transform rotate-90'}`} 
                     />
@@ -316,24 +465,25 @@ export default function BillsPage() {
                       animate="visible"
                       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                     >
-                      {paidBills.slice(0, 3).map(bill => (
+                      {sortedPaidBills.slice(0, 3).map(bill => (
                         <motion.div key={bill.id} variants={itemVariants}>
                           <BillCard
                             bill={bill}
                             onStatusChange={handlePaidStatusChange}
                             onDelete={handleDeleteBill}
+                            onPin={handlePinChange}
                           />
                         </motion.div>
                       ))}
                     </motion.div>
                   )}
                   
-                  {!collapsedSections.paid && paidBills.length > 3 && (
+                  {!collapsedSections.paid && sortedPaidBills.length > 3 && (
                     <button
                       className="text-green-700 mt-2 text-sm font-medium hover:text-green-800 flex items-center cursor-pointer"
                       onClick={() => {/* Show more paid bills */}}
                     >
-                      View all {paidBills.length} paid bills
+                      View all {sortedPaidBills.length} paid bills
                       <ChevronRightIcon className="h-4 w-4 ml-1" />
                     </button>
                   )}
@@ -356,8 +506,15 @@ export default function BillsPage() {
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-lg border p-4">
-              <p className="text-gray-500 text-center py-8">Calendar view coming soon!</p>
+            <div className="space-y-6">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <p className="text-blue-800 font-medium">Today: {todayFormatted}</p>
+              </div>
+              
+              <BillCalendar 
+                bills={selectedCategory ? filterBillsByCategory(bills) : bills} 
+                onBillClick={handleBillClick} 
+              />
             </div>
           )}
         </>
@@ -368,6 +525,32 @@ export default function BillsPage() {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Add New Bill</h2>
             <BillForm onSubmit={handleBillAdded} onCancel={() => setShowAddForm(false)} />
+          </div>
+        </div>
+      )}
+      
+      {showBillDetails && selectedBill && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Bill Details</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowBillDetails(false)}
+              >
+                Close
+              </Button>
+            </div>
+            <BillCard
+              bill={selectedBill}
+              onStatusChange={handlePaidStatusChange}
+              onDelete={(id) => {
+                handleDeleteBill(id);
+                setShowBillDetails(false);
+              }}
+              onPin={handlePinChange}
+            />
           </div>
         </div>
       )}

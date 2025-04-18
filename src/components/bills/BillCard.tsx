@@ -8,8 +8,10 @@ import {
   TrashIcon,
   InformationCircleIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  StarIcon as StarOutlineIcon
 } from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/ui/Button';
 
@@ -30,6 +32,7 @@ interface Bill {
   status: 'paid' | 'upcoming' | 'overdue';
   lastPaid?: string;
   paymentHistory: PaymentHistory[];
+  isPinned?: boolean;
 }
 
 interface PaymentHistory {
@@ -44,6 +47,7 @@ interface BillCardProps {
   bill: Bill;
   onStatusChange: (id: string, isPaid: boolean) => void;
   onDelete: (id: string) => void;
+  onPin?: (id: string, isPinned: boolean) => void;
 }
 
 // Helper function to format currency
@@ -98,7 +102,7 @@ const getProgressPercentage = (daysUntilDue: number, reminderDays: number) => {
   return Math.min(Math.max(progress, 0), 100);
 };
 
-export default function BillCard({ bill, onStatusChange, onDelete }: BillCardProps) {
+export default function BillCard({ bill, onStatusChange, onDelete, onPin }: BillCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
@@ -142,6 +146,12 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
       alert('Failed to update payment status. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handlePinToggle = () => {
+    if (onPin) {
+      onPin(bill.id, !bill.isPinned);
     }
   };
   
@@ -204,9 +214,24 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
 
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <div>
-            <h3 className="font-medium text-gray-800">{bill.name}</h3>
-            <p className="text-gray-500 text-sm">{bill.category}</p>
+          <div className="flex items-center">
+            {onPin && (
+              <button
+                onClick={handlePinToggle}
+                className="mr-2 focus:outline-none"
+                title={bill.isPinned ? "Unpin this bill" : "Pin this bill as important"}
+              >
+                {bill.isPinned ? (
+                  <StarIcon className="h-5 w-5 text-yellow-400" />
+                ) : (
+                  <StarOutlineIcon className="h-5 w-5 text-gray-400 hover:text-yellow-400" />
+                )}
+              </button>
+            )}
+            <div>
+              <h3 className="font-medium text-gray-800">{bill.name}</h3>
+              <p className="text-gray-500 text-sm">{bill.category}</p>
+            </div>
           </div>
           <div className="text-xl font-semibold">
             {formatCurrency(bill.amount)}
