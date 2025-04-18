@@ -9,9 +9,9 @@ import {
   InformationCircleIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-  StarIcon as StarOutlineIcon
+  MapPinIcon as PinOutlineIcon
 } from '@heroicons/react/24/outline';
-import { StarIcon } from '@heroicons/react/24/solid';
+import { MapPinIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/ui/Button';
 
@@ -222,9 +222,9 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
                 title={bill.isPinned ? "Unpin this bill" : "Pin this bill as important"}
               >
                 {bill.isPinned ? (
-                  <StarIcon className="h-5 w-5 text-yellow-400" />
+                  <MapPinIcon className="h-5 w-5 text-red-500" />
                 ) : (
-                  <StarOutlineIcon className="h-5 w-5 text-gray-400 hover:text-yellow-400" />
+                  <PinOutlineIcon className="h-5 w-5 text-gray-400 hover:text-red-500" />
                 )}
               </button>
             )}

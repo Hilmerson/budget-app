@@ -149,6 +149,7 @@ model Bill {
   isRecurring     Boolean   @default(true)
   nextDueDate     DateTime?
   status          String    @default("upcoming") // "paid", "upcoming", "overdue"
+  isPinned        Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   paymentHistory  BillPayment[]

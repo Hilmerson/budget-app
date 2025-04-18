@@ -146,7 +146,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
             Amount*
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <BanknotesIcon className="h-5 w-5 text-gray-400" />
             </div>
             <Input
@@ -172,7 +172,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
             Due Date*
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <CalendarIcon className="h-5 w-5 text-gray-400" />
             </div>
             <Input
@@ -229,7 +229,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
                 Frequency
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <ClockIcon className="h-5 w-5 text-gray-400" />
                 </div>
                 <Controller
@@ -257,7 +257,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
           Remind Me
         </label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <CalendarIcon className="h-5 w-5 text-gray-400" />
           </div>
           <Controller
