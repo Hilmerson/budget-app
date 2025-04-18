@@ -8,6 +8,10 @@ A personal finance management application built with Next.js that helps users tr
 - **Expense Tracking**: Log and categorize expenses with detailed insights
 - **Budget Planning**: Set financial goals and track progress
 - **Bill Reminders**: Track and manage recurring payments with smart reminders
+  - Pin important bills to keep them at the top of each section
+  - Visually consistent cards with clear status indicators
+  - User-friendly form with clear input fields 
+  - Subtle yet accessible actions for common tasks
 - **Financial Health**: Get insights into your overall financial well-being
 - **Gamification**: Enhanced XP and leveling system to reward consistent financial habits
   - Automatic level-ups when thresholds are reached
@@ -47,6 +51,9 @@ See the [ROUTE_NAVIGATION.md](./ROUTE_NAVIGATION.md) file for more details about
 
 The Bill Reminders feature helps users keep track of recurring and one-time payments with:
 - Visual indicators for upcoming, overdue, and paid bills
+- Star icon to pin important bills to the top of each section
+- Consistent card height regardless of bill type (recurring or one-time)
+- Streamlined, intuitive form with properly spaced icon-labeled fields
 - Automated calculations for next payment dates
 - XP rewards for on-time payments
 - Payment history tracking

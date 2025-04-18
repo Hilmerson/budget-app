@@ -11,10 +11,14 @@ The Bill Reminders feature in Finny helps users keep track of their recurring an
 - Set reminder notifications
 - Mark bills as paid manually
 - Record payment details
+- Pin important bills to the top of each section
 
 ### Visual UI Elements
 - Color-coded bills based on status (paid, upcoming, overdue)
-- Clean card-based interface for each bill
+- Clean card-based interface with consistent heights for all bills
+- Star icons to mark important bills
+- Subtle action buttons with clear purpose (primary for payment, secondary for details)
+- Non-destructive UI with subtle but recognizable delete functionality
 - Animated transitions for a modern feel
 - Clear status indicators for due dates
 
@@ -23,6 +27,7 @@ The Bill Reminders feature in Finny helps users keep track of their recurring an
 - Countdown of days until payment is due
 - Configurable reminder notifications
 - Support for various payment frequencies (weekly, monthly, etc.)
+- Consistent display of payment frequency information
 
 ### Gamification Integration
 - Earn XP for paying bills on time
@@ -33,7 +38,7 @@ The Bill Reminders feature in Finny helps users keep track of their recurring an
 
 ### Data Model
 The bill system is built on two main database models:
-- `Bill` - Contains bill information, status, and recurrence settings
+- `Bill` - Contains bill information, status, recurrence settings, and pinned status
 - `BillPayment` - Tracks individual payments made against a bill
 
 ### API Endpoints
@@ -45,9 +50,9 @@ The bill system is built on two main database models:
 - `POST /api/bills/payment` - Record a payment for a bill
 
 ### UI Components
-- `BillCard` - Displays a single bill with its details and actions
-- `BillForm` - Form for creating and editing bills
-- `BillsPage` - Main page displaying all bills grouped by status
+- `BillCard` - Displays a single bill with its details, actions and pin status
+- `BillForm` - User-friendly form with icon-labeled inputs for creating and editing bills
+- `BillsPage` - Main page displaying all bills grouped by status with pinned bills at the top of each group
 
 ## User Flow
 
@@ -69,6 +74,11 @@ The bill system is built on two main database models:
    - User receives notification when bill is due soon
    - Visual indicators show urgency based on days until due
    - Overdue bills are highlighted for immediate attention
+   
+4. **Managing Important Bills**
+   - User can click the star icon to pin important bills
+   - Pinned bills appear at the top of their respective sections
+   - Star changes color to indicate pinned status
 
 ## Future Enhancements
 
