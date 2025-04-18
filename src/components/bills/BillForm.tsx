@@ -133,7 +133,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
             id="name"
             placeholder="e.g. Rent, Internet, Netflix"
             {...register('name', { required: 'Bill name is required' })}
-            error={errors.name?.message}
+            error={errors.name?.message?.toString()}
           />
         </div>
         
@@ -156,7 +156,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
                 required: 'Amount is required',
                 min: { value: 0, message: 'Amount must be positive' }
               })}
-              error={errors.amount?.message}
+              error={errors.amount?.message?.toString()}
             />
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
               type="date"
               className="pl-10"
               {...register('dueDate', { required: 'Due date is required' })}
-              error={errors.dueDate?.message}
+              error={errors.dueDate?.message?.toString()}
             />
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
                 value={field.value}
                 onChange={field.onChange}
                 emptyOptionLabel="Select a category"
-                error={errors.category?.message}
+                error={errors.category?.message?.toString()}
               />
             )}
           />
@@ -237,7 +237,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
                       options={FREQUENCY_OPTIONS}
                       value={field.value}
                       onChange={field.onChange}
-                      error={errors.frequency?.message}
+                      error={errors.frequency?.message?.toString()}
                       className="pl-10"
                     />
                   )}
@@ -260,7 +260,13 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
               id="reminderDays"
               options={REMINDER_OPTIONS}
               value={field.value.toString()}
-              onChange={(value) => field.onChange(parseInt(value))}
+              onChange={(value) => {
+                // For controlled components, extract the value from the event
+                const stringValue = typeof value === 'object' && value !== null 
+                  ? (value.target as HTMLSelectElement).value 
+                  : value;
+                field.onChange(parseInt(stringValue));
+              }}
             />
           )}
         />
@@ -299,7 +305,7 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
               }
             }
           })}
-          error={errors.paymentURL?.message}
+          error={errors.paymentURL?.message?.toString()}
         />
         <p className="mt-1 text-sm text-gray-500">
           Link to the payment page for this bill (https:// will be added if missing)

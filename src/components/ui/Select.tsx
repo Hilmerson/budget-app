@@ -41,6 +41,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     id,
     required,
     disabled,
+    emptyOptionLabel,
     ...props 
   }, ref) => {
     // Use React's useId hook for stable IDs across server/client
@@ -107,9 +108,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             )}
             {...props}
           >
-            {props.emptyOptionLabel && (
+            {emptyOptionLabel && (
               <option value="" disabled={required}>
-                {props.emptyOptionLabel}
+                {emptyOptionLabel}
               </option>
             )}
             {options.map(option => (
