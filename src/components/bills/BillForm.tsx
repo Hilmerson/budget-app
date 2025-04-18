@@ -145,24 +145,19 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
           <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
             Amount*
           </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <BanknotesIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              className="pl-10"
-              {...register('amount', { 
-                required: 'Amount is required',
-                min: { value: 0, message: 'Amount must be positive' }
-              })}
-              error={errors.amount?.message?.toString()}
-            />
-          </div>
+          <Input
+            id="amount"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            startIcon={<BanknotesIcon className="h-5 w-5 text-gray-400" />}
+            {...register('amount', { 
+              required: 'Amount is required',
+              min: { value: 0, message: 'Amount must be positive' }
+            })}
+            error={errors.amount?.message?.toString()}
+          />
         </div>
       </div>
       
@@ -171,18 +166,13 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
           <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
             Due Date*
           </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <CalendarIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            <Input
-              id="dueDate"
-              type="date"
-              className="pl-10"
-              {...register('dueDate', { required: 'Due date is required' })}
-              error={errors.dueDate?.message?.toString()}
-            />
-          </div>
+          <Input
+            id="dueDate"
+            type="date"
+            startIcon={<CalendarIcon className="h-5 w-5 text-gray-400" />}
+            {...register('dueDate', { required: 'Due date is required' })}
+            error={errors.dueDate?.message?.toString()}
+          />
         </div>
         
         <div>
@@ -228,25 +218,20 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
               <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-1">
                 Frequency
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <ClockIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <Controller
-                  name="frequency"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      id="frequency"
-                      options={FREQUENCY_OPTIONS}
-                      value={field.value}
-                      onChange={field.onChange}
-                      error={errors.frequency?.message?.toString()}
-                      className="pl-10"
-                    />
-                  )}
-                />
-              </div>
+              <Controller
+                name="frequency"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    id="frequency"
+                    options={FREQUENCY_OPTIONS}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.frequency?.message?.toString()}
+                    startIcon={<ClockIcon className="h-5 w-5 text-gray-400" />}
+                  />
+                )}
+              />
             </div>
           </div>
         )}
@@ -256,31 +241,26 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
         <label htmlFor="reminderDays" className="block text-sm font-medium text-gray-700 mb-1">
           Remind Me
         </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <CalendarIcon className="h-5 w-5 text-gray-400" />
-          </div>
-          <Controller
-            name="reminderDays"
-            control={control}
-            render={({ field }) => (
-              <Select
-                id="reminderDays"
-                options={REMINDER_OPTIONS}
-                value={field.value.toString()}
-                onChange={(value) => {
-                  // For controlled components, extract the value from the event
-                  const stringValue = typeof value === 'object' && value !== null 
-                    ? (value.target as HTMLSelectElement).value 
-                    : value;
-                  field.onChange(parseInt(stringValue));
-                }}
-                className="pl-10"
-                helperText="When should we remind you about this bill?"
-              />
-            )}
-          />
-        </div>
+        <Controller
+          name="reminderDays"
+          control={control}
+          render={({ field }) => (
+            <Select
+              id="reminderDays"
+              options={REMINDER_OPTIONS}
+              value={field.value.toString()}
+              onChange={(value) => {
+                // For controlled components, extract the value from the event
+                const stringValue = typeof value === 'object' && value !== null 
+                  ? (value.target as HTMLSelectElement).value 
+                  : value;
+                field.onChange(parseInt(stringValue));
+              }}
+              startIcon={<CalendarIcon className="h-5 w-5 text-gray-400" />}
+              helperText="When should we remind you about this bill?"
+            />
+          )}
+        />
       </div>
       
       <div>
