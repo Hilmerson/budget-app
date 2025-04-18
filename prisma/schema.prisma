@@ -42,6 +42,7 @@ model User {
   incomes       Income[]
   goals         Goal[]
   achievements  Achievement[]
+  bills         Bill[]
 }
 
 model Account {
@@ -128,4 +129,40 @@ model Achievement {
   icon        String?
   earnedAt    DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Bill payment reminders model
+model Bill {
+  id              String    @id @default(cuid())
+  userId          String
+  name            String
+  amount          Float
+  dueDate         DateTime
+  category        String
+  frequency       String    // "one-time", "weekly", "bi-weekly", "monthly", "quarterly", "yearly"
+  description     String?
+  reminderDays    Int       @default(3)  // Number of days before due date to send reminder
+  autoPay         Boolean   @default(false)
+  paymentURL      String?   // Optional URL for online payment
+  lastPaid        DateTime?
+  isPaid          Boolean   @default(false)
+  isRecurring     Boolean   @default(true)
+  nextDueDate     DateTime?
+  status          String    @default("upcoming") // "paid", "upcoming", "overdue"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  paymentHistory  BillPayment[]
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Track payment history for bills
+model BillPayment {
+  id          String    @id @default(cuid())
+  billId      String
+  amount      Float
+  paymentDate DateTime
+  notes       String?
+  method      String?   // "card", "bank", "cash", etc.
+  createdAt   DateTime  @default(now())
+  bill        Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
 }

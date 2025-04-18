@@ -39,6 +39,7 @@ export default function DashboardSidebar() {
     if (path === '/dashboard') return 'dashboard';
     if (path.includes('/dashboard/income')) return 'income';
     if (path.includes('/dashboard/expenses')) return 'expenses';
+    if (path.includes('/dashboard/bills')) return 'bills';
     if (path.includes('/dashboard/achievements')) return 'achievements';
     if (path.includes('/profile')) return 'profile';
     return 'dashboard';
@@ -66,6 +67,7 @@ export default function DashboardSidebar() {
     { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
     { id: 'income', label: 'Income', icon: '💰', path: '/dashboard/income' },
     { id: 'expenses', label: 'Expenses', icon: '💸', path: '/dashboard/expenses' },
+    { id: 'bills', label: 'Bills', icon: '📅', path: '/dashboard/bills' },
     { id: 'achievements', label: 'Achievements', icon: '🏆', path: '/dashboard/achievements' },
     { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
   ];

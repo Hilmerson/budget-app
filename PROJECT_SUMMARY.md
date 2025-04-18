@@ -9,6 +9,7 @@ Finny is a comprehensive personal finance management application built with Next
 - Track income and expenses across multiple categories
 - Categorize transactions with custom tagging
 - Set and monitor monthly budget targets
+- Manage recurring bills and payment reminders
 - Generate financial reports with insights
 - Calculate tax implications of income and expenses
 
@@ -80,6 +81,13 @@ Finny is a comprehensive personal finance management application built with Next
 - Implemented persistent sidebar across routes
 - Enhanced URL structure for better SEO and sharing
 - Optimized client-side navigation between features
+
+### Bill Reminders System
+- Implemented comprehensive bill tracking and management
+- Created modern, animated UI for bill management
+- Added support for recurring payments with automatic next-date calculation
+- Integrated with XP system to reward on-time payments
+- Designed color-coded visual indicators for bill status
 
 ### Enhanced XP System
 - Improved formula for level progression (base 100 XP + 50 XP growth factor per level)

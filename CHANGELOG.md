@@ -13,6 +13,13 @@ All notable changes to the Budget App will be documented in this file.
   - Implemented progressive XP requirements for higher levels
   - Added server synchronization to prevent XP data inconsistencies
   - Fixed race conditions when rapidly gaining XP
+- Bill Reminders feature
+  - Added comprehensive bill management system
+  - Created bills dashboard with visual status indicators
+  - Implemented recurring payment support with automatic date calculation
+  - Added XP rewards for on-time payments
+  - Created modern, animated UI components for bill management
+  - Detailed documentation in BILL_REMINDERS.md
 
 ### Fixed
 - Hydration errors from client/server component mismatches

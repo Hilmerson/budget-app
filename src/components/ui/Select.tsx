@@ -21,6 +21,7 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
   fullWidth?: boolean;
   hideLabel?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  emptyOptionLabel?: string;
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
@@ -106,6 +107,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             )}
             {...props}
           >
+            {props.emptyOptionLabel && (
+              <option value="" disabled={required}>
+                {props.emptyOptionLabel}
+              </option>
+            )}
             {options.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}

@@ -2,6 +2,7 @@
 
 import { ReactNode, ButtonHTMLAttributes, forwardRef } from 'react';
 import { twMerge } from 'tailwind-merge';
+import { classNames } from '@/lib/utils';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'ghost';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -59,17 +60,28 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // Full width style
     const widthStyle = fullWidth ? "w-full" : "";
     
+    // Merge the variant and size classes with any additional className
+    const buttonClasses = classNames(
+      'inline-flex items-center justify-center rounded-md font-medium focus:outline-none',
+      'transition-colors duration-150 ease-in-out',
+      'cursor-pointer', // Add cursor-pointer to all buttons
+      variantStyles[variant],
+      sizeStyles[size],
+      {
+        'opacity-50 cursor-not-allowed': disabled,
+      },
+      className
+    );
+    
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
         className={twMerge(
           baseStyles,
-          variantStyles[variant],
-          sizeStyles[size],
+          buttonClasses,
           widthStyle,
-          disabledStyles,
-          className
+          disabledStyles
         )}
         {...props}
       >
