@@ -9,9 +9,9 @@ import {
   InformationCircleIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-  MapPinIcon as PinOutlineIcon
+  PaperClipIcon as PinOutlineIcon
 } from '@heroicons/react/24/outline';
-import { MapPinIcon } from '@heroicons/react/24/solid';
+import { PaperClipIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/ui/Button';
 
@@ -222,9 +222,17 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
                 title={bill.isPinned ? "Unpin this bill" : "Pin this bill as important"}
               >
                 {bill.isPinned ? (
-                  <MapPinIcon className="h-5 w-5 text-red-500" />
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.5 17V9M9.5 9C10.1667 8.33333 10.9 7 10.5 6C10.1 5 9.16667 4.33333 8.5 4H10.5C12.1667 4.33333 15.9 5.4 16.5 6C17.1 6.6 15.6667 7.33333 14.5 7.5L9.5 9Z" 
+                      stroke="#EF4444" strokeWidth="2" strokeLinecap="round" />
+                    <circle cx="9.5" cy="3" r="2" fill="#EF4444" />
+                  </svg>
                 ) : (
-                  <PinOutlineIcon className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                  <svg className="h-5 w-5 text-gray-400 hover:text-red-500" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.5 17V9M9.5 9C10.1667 8.33333 10.9 7 10.5 6C10.1 5 9.16667 4.33333 8.5 4H10.5C12.1667 4.33333 15.9 5.4 16.5 6C17.1 6.6 15.6667 7.33333 14.5 7.5L9.5 9Z" 
+                      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="9.5" cy="3" r="2" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
                 )}
               </button>
             )}
@@ -304,23 +312,17 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
         <div className="flex space-x-2 mt-3">
           <Button
             size="sm"
-            variant={bill.status === 'paid' ? 'secondary' : 
-                    (daysUntilDue <= 2 && bill.status === 'upcoming') ? 'success' : 'primary'}
+            variant={bill.status === 'paid' ? 'secondary' : 'primary'}
             onClick={handlePaymentToggle}
             disabled={isLoading}
             className={`flex-1 flex items-center justify-center cursor-pointer ${
-              daysUntilDue <= 2 && bill.status === 'upcoming' ? 'animate-pulse shadow-md' : ''
+              daysUntilDue <= 2 && bill.status === 'upcoming' ? 'animate-pulse' : ''
             }`}
           >
             {bill.status === 'paid' ? (
               <>
                 <CheckCircleIcon className="h-4 w-4 mr-1" />
                 Paid
-              </>
-            ) : daysUntilDue <= 2 && bill.status === 'upcoming' ? (
-              <>
-                <CheckCircleIcon className="h-4 w-4 mr-1" />
-                Pay Now!
               </>
             ) : (
               <>
@@ -353,8 +355,8 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
           
           <Button
             size="sm"
-            variant="danger"
-            className="flex items-center cursor-pointer"
+            variant="secondary"
+            className="flex items-center cursor-pointer text-red-500 hover:text-red-700"
             onClick={() => onDelete(bill.id)}
           >
             <TrashIcon className="h-4 w-4" />
