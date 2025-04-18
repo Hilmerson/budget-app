@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { CalendarDaysIcon, BanknotesIcon, PlusCircleIcon, ChevronRightIcon, ExclamationCircleIcon, CheckCircleIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PartyPopper } from 'lucide-react';
 import BillForm from '@/components/bills/BillForm';
 import BillCard from '@/components/bills/BillCard';
 import BillCalendar from '@/components/bills/BillCalendar';
@@ -74,6 +75,7 @@ export default function BillsPage() {
   const [showBillDetails, setShowBillDetails] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showAllPaidCelebration, setShowAllPaidCelebration] = useState(false);
   
   const fetchBills = async () => {
     try {
@@ -86,6 +88,17 @@ export default function BillsPage() {
       
       const data = await response.json();
       setBills(data);
+      
+      // Check if we should show the celebration (all bills paid, and at least one bill exists)
+      const hasUnpaidBills = data.some(bill => bill.status === 'upcoming' || bill.status === 'overdue');
+      const hasBills = data.length > 0;
+      
+      if (hasBills && !hasUnpaidBills && !showAllPaidCelebration) {
+        setShowAllPaidCelebration(true);
+        // Hide celebration after 5 seconds
+        setTimeout(() => setShowAllPaidCelebration(false), 5000);
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching bills:', err);
@@ -122,7 +135,7 @@ export default function BillsPage() {
         throw new Error('Failed to update bill');
       }
       
-      fetchBills();
+      await fetchBills(); // Will check for all-paid celebration after update
     } catch (err) {
       console.error('Error updating bill:', err);
       setError('Failed to update bill. Please try again.');
@@ -266,6 +279,36 @@ export default function BillsPage() {
   
   return (
     <div className="h-full w-full py-6">
+      {/* All Bills Paid Celebration */}
+      <AnimatePresence>
+        {showAllPaidCelebration && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed inset-x-0 top-4 mx-auto w-auto max-w-md z-50 bg-green-50 border border-green-200 rounded-lg shadow-lg p-4 flex items-center justify-center"
+          >
+            <div className="flex flex-col items-center p-2">
+              <motion.div
+                initial={{ rotate: 0, scale: 0.5 }}
+                animate={{ 
+                  rotate: [0, 15, -15, 10, -10, 5, -5, 0],
+                  scale: [0.5, 1.2, 1]
+                }}
+                transition={{ duration: 1 }}
+              >
+                <PartyPopper className="h-12 w-12 text-yellow-500 mb-2" />
+              </motion.div>
+              <h3 className="text-lg font-bold text-green-700">Congratulations!</h3>
+              <p className="text-green-600 text-center">
+                All your bills are paid for this month. Great job staying on top of your finances!
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Bill Reminders</h1>
@@ -490,17 +533,55 @@ export default function BillsPage() {
                 </div>
               )}
               
-              {bills.length === 0 && (
-                <div className="bg-gray-50 rounded-lg border p-8 text-center">
+              {bills.length === 0 && !loading && (
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
                   <div className="flex justify-center mb-4">
-                    <BanknotesIcon className="h-12 w-12 text-gray-400" />
+                    <motion.div
+                      animate={{ 
+                        y: [0, -10, 0],
+                        scale: [1, 1.05, 1]
+                      }}
+                      transition={{ 
+                        duration: 2,
+                        repeat: Infinity,
+                        repeatType: "reverse"
+                      }}
+                    >
+                      <BanknotesIcon className="h-16 w-16 text-indigo-400" />
+                    </motion.div>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-700">No bills found</h3>
-                  <p className="text-gray-500 mt-1">Get started by adding your first bill</p>
-                  <div className="mt-4">
-                    <Button variant="primary" onClick={handleAddBill}>
+                  <h3 className="text-xl font-medium text-gray-800 mb-2">No bills found</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Track your recurring bills, get reminders before they're due, and never miss a payment again.
+                  </p>
+                  <div className="space-y-4">
+                    <Button 
+                      variant="primary" 
+                      onClick={handleAddBill}
+                      size="lg"
+                      className="px-8"
+                    >
+                      <PlusCircleIcon className="h-5 w-5 mr-2" />
                       Add Your First Bill
                     </Button>
+                    
+                    <div className="text-sm text-gray-500 max-w-md mx-auto pt-4 border-t border-gray-100">
+                      <p className="mb-2">Here are some examples of bills you might want to track:</p>
+                      <div className="grid grid-cols-2 gap-2 text-left mx-auto max-w-xs">
+                        <ul className="space-y-1">
+                          <li>• Rent/Mortgage</li>
+                          <li>• Electricity</li>
+                          <li>• Water</li>
+                          <li>• Internet</li>
+                        </ul>
+                        <ul className="space-y-1">
+                          <li>• Phone</li>
+                          <li>• Insurance</li>
+                          <li>• Subscriptions</li>
+                          <li>• Credit Cards</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

@@ -304,15 +304,23 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
         <div className="flex space-x-2 mt-3">
           <Button
             size="sm"
-            variant={bill.status === 'paid' ? 'secondary' : 'primary'}
+            variant={bill.status === 'paid' ? 'secondary' : 
+                    (daysUntilDue <= 2 && bill.status === 'upcoming') ? 'success' : 'primary'}
             onClick={handlePaymentToggle}
             disabled={isLoading}
-            className="flex-1 flex items-center justify-center cursor-pointer"
+            className={`flex-1 flex items-center justify-center cursor-pointer ${
+              daysUntilDue <= 2 && bill.status === 'upcoming' ? 'animate-pulse shadow-md' : ''
+            }`}
           >
             {bill.status === 'paid' ? (
               <>
                 <CheckCircleIcon className="h-4 w-4 mr-1" />
                 Paid
+              </>
+            ) : daysUntilDue <= 2 && bill.status === 'upcoming' ? (
+              <>
+                <CheckCircleIcon className="h-4 w-4 mr-1" />
+                Pay Now!
               </>
             ) : (
               <>
@@ -391,7 +399,44 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
               
               {bill.paymentHistory && bill.paymentHistory.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 pt-3">
-                  <div className="font-medium text-gray-700 mb-2">Recent Payments</div>
+                  <div className="font-medium text-gray-700 mb-2">Payment History</div>
+                  
+                  {/* Visual payment timeline */}
+                  <div className="mb-3 bg-gray-100 p-2 rounded">
+                    <div className="h-16 relative">
+                      {/* Timeline line */}
+                      <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-300"></div>
+                      
+                      {/* Payment dots */}
+                      {bill.paymentHistory.slice(0, 8).map((payment, index) => {
+                        // Calculate position based on date
+                        const date = new Date(payment.paymentDate);
+                        // Use last 8 payments and distribute them along the timeline
+                        const position = index / (Math.min(bill.paymentHistory.length, 8) - 1) * 100;
+                        
+                        return (
+                          <div 
+                            key={payment.id}
+                            className="absolute top-1/2 transform -translate-y-1/2"
+                            style={{ left: `${position}%` }}
+                          >
+                            <div className="relative">
+                              <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                              <div className="absolute bottom-full mb-1 transform -translate-x-1/2 left-1/2">
+                                <div className="text-xs font-medium whitespace-nowrap">
+                                  {formatDate(payment.paymentDate).split(' ')[0]} {/* Just show month/day */}
+                                </div>
+                                <div className="text-[10px] text-gray-500">
+                                  {formatCurrency(payment.amount)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
                   <div className="max-h-32 overflow-y-auto">
                     {bill.paymentHistory.map(payment => (
                       <div 
