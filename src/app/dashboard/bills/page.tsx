@@ -76,6 +76,10 @@ export default function BillsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showAllPaidCelebration, setShowAllPaidCelebration] = useState(false);
+  const [showAllPaidBills, setShowAllPaidBills] = useState(false);
+  const [paidBillsSortBy, setPaidBillsSortBy] = useState<'date' | 'amount'>('date');
+  const [paidBillsSortOrder, setPaidBillsSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [paidBillsSearchTerm, setPaidBillsSearchTerm] = useState('');
   
   const fetchBills = async () => {
     try {
@@ -90,7 +94,7 @@ export default function BillsPage() {
       setBills(data);
       
       // Check if we should show the celebration (all bills paid, and at least one bill exists)
-      const hasUnpaidBills = data.some(bill => bill.status === 'upcoming' || bill.status === 'overdue');
+      const hasUnpaidBills = data.some((bill: Bill) => bill.status === 'upcoming' || bill.status === 'overdue');
       const hasBills = data.length > 0;
       
       if (hasBills && !hasUnpaidBills && !showAllPaidCelebration) {
@@ -275,6 +279,61 @@ export default function BillsPage() {
   // Clear category filter
   const clearCategoryFilter = () => {
     setSelectedCategory(null);
+  };
+  
+  // Handle showing all paid bills
+  const handleViewAllPaidBills = () => {
+    setShowAllPaidBills(true);
+    // Reset filters when opening modal
+    setPaidBillsSearchTerm('');
+    setPaidBillsSortBy('date');
+    setPaidBillsSortOrder('desc');
+  };
+  
+  // Sort and filter paid bills
+  const getSortedAndFilteredPaidBills = () => {
+    let filtered = [...sortedPaidBills];
+    
+    // Apply search/filter
+    if (paidBillsSearchTerm) {
+      const term = paidBillsSearchTerm.toLowerCase();
+      filtered = filtered.filter(bill => 
+        bill.name.toLowerCase().includes(term) || 
+        bill.category.toLowerCase().includes(term)
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (paidBillsSortBy === 'date') {
+        const dateA = new Date(a.lastPaid || a.dueDate).getTime();
+        const dateB = new Date(b.lastPaid || b.dueDate).getTime();
+        return paidBillsSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      } else {
+        return paidBillsSortOrder === 'asc' ? a.amount - b.amount : b.amount - a.amount;
+      }
+    });
+    
+    return filtered;
+  };
+  
+  // Group bills by month
+  const groupBillsByMonth = () => {
+    const sortedBills = getSortedAndFilteredPaidBills();
+    const grouped: Record<string, Bill[]> = {};
+    
+    sortedBills.forEach(bill => {
+      const date = new Date(bill.lastPaid || bill.dueDate);
+      const monthYear = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+      
+      if (!grouped[monthYear]) {
+        grouped[monthYear] = [];
+      }
+      
+      grouped[monthYear].push(bill);
+    });
+    
+    return grouped;
   };
   
   return (
@@ -524,7 +583,7 @@ export default function BillsPage() {
                   {!collapsedSections.paid && sortedPaidBills.length > 3 && (
                     <button
                       className="text-green-700 mt-2 text-sm font-medium hover:text-green-800 flex items-center cursor-pointer"
-                      onClick={() => {/* Show more paid bills */}}
+                      onClick={handleViewAllPaidBills}
                     >
                       View all {sortedPaidBills.length} paid bills
                       <ChevronRightIcon className="h-4 w-4 ml-1" />
@@ -632,6 +691,133 @@ export default function BillsPage() {
               }}
               onPin={handlePinChange}
             />
+          </div>
+        </div>
+      )}
+      
+      {/* All paid bills modal */}
+      {showAllPaidBills && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold flex items-center text-green-700">
+                <CheckCircleIcon className="h-5 w-5 mr-2" />
+                Paid Bills History
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllPaidBills(false)}
+              >
+                Close
+              </Button>
+            </div>
+            
+            <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              {/* Search box */}
+              <div className="relative w-full md:w-64">
+                <input
+                  type="text"
+                  value={paidBillsSearchTerm}
+                  onChange={(e) => setPaidBillsSearchTerm(e.target.value)}
+                  placeholder="Search bills..."
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+              
+              {/* Sort controls */}
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-500 text-sm">Sort by:</span>
+                <div className="flex">
+                  <button
+                    className={`px-3 py-1 rounded-l-md text-sm ${
+                      paidBillsSortBy === 'date' 
+                        ? 'bg-indigo-100 text-indigo-700' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    onClick={() => setPaidBillsSortBy('date')}
+                  >
+                    Date
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded-r-md text-sm ${
+                      paidBillsSortBy === 'amount' 
+                        ? 'bg-indigo-100 text-indigo-700' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    onClick={() => setPaidBillsSortBy('amount')}
+                  >
+                    Amount
+                  </button>
+                </div>
+                
+                <button
+                  className="p-1 text-gray-500 hover:text-gray-700"
+                  onClick={() => setPaidBillsSortOrder(paidBillsSortOrder === 'asc' ? 'desc' : 'asc')}
+                  title={paidBillsSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
+                >
+                  {paidBillsSortOrder === 'asc' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            <div className="text-sm text-gray-500 mb-4">
+              {paidBillsSearchTerm 
+                ? `Found ${getSortedAndFilteredPaidBills().length} bills matching "${paidBillsSearchTerm}"`
+                : `Showing all ${sortedPaidBills.length} paid bills`}
+            </div>
+            
+            {/* Bills grouped by month */}
+            <div className="space-y-6">
+              {Object.entries(groupBillsByMonth()).map(([monthYear, bills]) => (
+                <div key={monthYear}>
+                  <h3 className="text-lg font-medium text-gray-800 mb-3 pb-2 border-b">
+                    {monthYear} ({bills.length} bills)
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {bills.map(bill => (
+                      <motion.div 
+                        key={bill.id}
+                        initial={{ opacity: 0, y: 20 }} 
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 260,
+                          damping: 20,
+                        }}
+                      >
+                        <BillCard
+                          bill={bill}
+                          onStatusChange={handlePaidStatusChange}
+                          onDelete={handleDeleteBill}
+                          onPin={handlePinChange}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              
+              {getSortedAndFilteredPaidBills().length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No paid bills found matching your search.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
