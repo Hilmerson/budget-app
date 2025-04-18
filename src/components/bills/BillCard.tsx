@@ -292,12 +292,17 @@ export default function BillCard({ bill, onStatusChange, onDelete, onPin }: Bill
           </>
         )}
         
-        {bill.isRecurring && (
+        {/* Ensure consistent height with recurring info section */}
+        {bill.isRecurring ? (
           <div className="text-xs text-gray-500 mb-2">
             {bill.frequency === 'one-time' ? 'One-time payment' : `Recurs ${bill.frequency}`}
             {bill.nextDueDate && bill.status === 'paid' && (
               <> · Next due: {formatDate(bill.nextDueDate)}</>
             )}
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500 mb-2">
+            One-time payment
           </div>
         )}
         
