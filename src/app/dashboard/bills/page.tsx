@@ -263,7 +263,7 @@ export default function BillsPage() {
               
               {/* Upcoming bills section */}
               {sortedUpcomingBills.length > 0 && (
-                <div className="bg-white p-4 rounded-lg border">
+                <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <h2 
                     className="text-lg font-semibold mb-2 flex items-center cursor-pointer"
                     onClick={() => toggleSection('upcoming')}

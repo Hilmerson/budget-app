@@ -42,10 +42,14 @@ const FREQUENCY_OPTIONS = [
 // Reminder days options
 const REMINDER_OPTIONS = [
   { value: '1', label: '1 day before' },
+  { value: '2', label: '2 days before' },
   { value: '3', label: '3 days before' },
   { value: '5', label: '5 days before' },
   { value: '7', label: '1 week before' },
-  { value: '14', label: '2 weeks before' }
+  { value: '10', label: '10 days before' },
+  { value: '14', label: '2 weeks before' },
+  { value: '21', label: '3 weeks before' },
+  { value: '30', label: '1 month before' }
 ];
 
 export default function BillForm({ onSubmit, onCancel, initialData }: BillFormProps) {
@@ -252,24 +256,31 @@ export default function BillForm({ onSubmit, onCancel, initialData }: BillFormPr
         <label htmlFor="reminderDays" className="block text-sm font-medium text-gray-700 mb-1">
           Remind Me
         </label>
-        <Controller
-          name="reminderDays"
-          control={control}
-          render={({ field }) => (
-            <Select
-              id="reminderDays"
-              options={REMINDER_OPTIONS}
-              value={field.value.toString()}
-              onChange={(value) => {
-                // For controlled components, extract the value from the event
-                const stringValue = typeof value === 'object' && value !== null 
-                  ? (value.target as HTMLSelectElement).value 
-                  : value;
-                field.onChange(parseInt(stringValue));
-              }}
-            />
-          )}
-        />
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+            <CalendarIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <Controller
+            name="reminderDays"
+            control={control}
+            render={({ field }) => (
+              <Select
+                id="reminderDays"
+                options={REMINDER_OPTIONS}
+                value={field.value.toString()}
+                onChange={(value) => {
+                  // For controlled components, extract the value from the event
+                  const stringValue = typeof value === 'object' && value !== null 
+                    ? (value.target as HTMLSelectElement).value 
+                    : value;
+                  field.onChange(parseInt(stringValue));
+                }}
+                className="pl-10"
+                helperText="When should we remind you about this bill?"
+              />
+            )}
+          />
+        </div>
       </div>
       
       <div>

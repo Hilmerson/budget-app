@@ -10,7 +10,7 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from '@/components/ui/Button';
 
 interface Bill {
@@ -77,9 +77,31 @@ const getDaysUntilDue = (dueDate: string) => {
   return diffDays;
 };
 
+// Helper function to get progress color
+const getProgressColor = (daysUntilDue: number, reminderDays: number) => {
+  if (daysUntilDue <= 0) return 'bg-red-500'; // Overdue
+  if (daysUntilDue <= Math.floor(reminderDays / 3)) return 'bg-red-400'; // Very urgent
+  if (daysUntilDue <= Math.floor(reminderDays / 2)) return 'bg-orange-400'; // Urgent
+  if (daysUntilDue <= reminderDays) return 'bg-yellow-400'; // Approaching
+  return 'bg-green-400'; // Safe
+};
+
+// Helper function to calculate progress percentage
+const getProgressPercentage = (daysUntilDue: number, reminderDays: number) => {
+  // Ensure we don't go over 100% or under 0%
+  if (daysUntilDue <= 0) return 100;
+  
+  // We'll use reminderDays + 10 as our "full period" to make the progress more visible
+  const fullPeriod = reminderDays + 10;
+  const progress = ((fullPeriod - daysUntilDue) / fullPeriod) * 100;
+  
+  return Math.min(Math.max(progress, 0), 100);
+};
+
 export default function BillCard({ bill, onStatusChange, onDelete }: BillCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
   
   const handlePaymentToggle = async () => {
     try {
@@ -111,6 +133,9 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
         }
         
         await onStatusChange(bill.id, true);
+        // Show success animation
+        setShowPaymentSuccess(true);
+        setTimeout(() => setShowPaymentSuccess(false), 2000);
       }
     } catch (error) {
       console.error('Error toggling payment status:', error);
@@ -125,22 +150,27 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
   // Determine card styling based on status
   let cardClass = 'bg-white';
   let statusColor = 'text-blue-500';
-  let borderClass = 'border';
+  let borderClass = 'border border-gray-200';
+  let leftBorderClass = '';
   
   if (bill.status === 'paid') {
-    cardClass = 'bg-green-50';
     statusColor = 'text-green-500';
-    borderClass = 'border border-green-100';
+    leftBorderClass = 'border-l-4 border-l-green-500';
+    cardClass = 'bg-white';
   } else if (bill.status === 'overdue') {
-    cardClass = 'bg-red-50';
     statusColor = 'text-red-500';
-    borderClass = 'border border-red-100';
+    leftBorderClass = 'border-l-4 border-l-red-500';
+    cardClass = 'bg-red-50';
   } else {
     // If upcoming but due soon (within reminder days)
     if (daysUntilDue <= bill.reminderDays) {
-      cardClass = 'bg-yellow-50';
       statusColor = 'text-yellow-600';
-      borderClass = 'border border-yellow-100';
+      leftBorderClass = 'border-l-4 border-l-yellow-500';
+      // Only add background color if very close to due date (3 days or less)
+      cardClass = daysUntilDue <= 3 ? 'bg-yellow-50' : 'bg-white';
+    } else {
+      // Regular upcoming bills (not due soon)
+      leftBorderClass = 'border-l-4 border-l-gray-300';
     }
   }
   
@@ -150,8 +180,28 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
-      className={`${cardClass} ${borderClass} rounded-lg shadow-sm overflow-hidden`}
+      className={`${cardClass} ${borderClass} ${leftBorderClass} rounded-lg shadow-sm overflow-hidden relative`}
     >
+      {/* Payment success overlay */}
+      <AnimatePresence>
+        {showPaymentSuccess && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-green-500 bg-opacity-80 flex items-center justify-center z-10"
+          >
+            <motion.div
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1.2 }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+            >
+              <CheckCircleIcon className="h-16 w-16 text-white" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <div>
@@ -173,31 +223,48 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
         </div>
         
         {bill.status === 'upcoming' && (
-          <div className={`text-sm ${statusColor} font-medium flex items-center mb-2`}>
-            {daysUntilDue === 0 ? (
-              <>
-                <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-                Due today
-              </>
-            ) : daysUntilDue < 0 ? (
-              <>
-                <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-                Overdue by {Math.abs(daysUntilDue)} days
-              </>
-            ) : (
-              <>
-                {daysUntilDue <= bill.reminderDays && <ExclamationCircleIcon className="h-4 w-4 mr-1" />}
-                {daysUntilDue} days until due
-              </>
-            )}
-          </div>
+          <>
+            <div className={`text-sm ${statusColor} font-medium flex items-center mb-2`}>
+              {daysUntilDue === 0 ? (
+                <>
+                  <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                  Due today
+                </>
+              ) : daysUntilDue < 0 ? (
+                <>
+                  <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                  Overdue by {Math.abs(daysUntilDue)} days
+                </>
+              ) : (
+                <>
+                  {daysUntilDue <= bill.reminderDays && <ExclamationCircleIcon className="h-4 w-4 mr-1" />}
+                  {daysUntilDue} days until due
+                </>
+              )}
+            </div>
+            
+            {/* Due date progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+              <div 
+                className={`h-1.5 rounded-full ${getProgressColor(daysUntilDue, bill.reminderDays)}`}
+                style={{ width: `${getProgressPercentage(daysUntilDue, bill.reminderDays)}%` }}
+              ></div>
+            </div>
+          </>
         )}
         
         {bill.status === 'overdue' && (
-          <div className="text-sm text-red-500 font-medium flex items-center mb-2">
-            <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-            Overdue by {Math.abs(daysUntilDue)} days
-          </div>
+          <>
+            <div className="text-sm text-red-500 font-medium flex items-center mb-2">
+              <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+              Overdue by {Math.abs(daysUntilDue)} days
+            </div>
+            
+            {/* Overdue progress bar - 100% red */}
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+              <div className="h-1.5 rounded-full bg-red-500 w-full"></div>
+            </div>
+          </>
         )}
         
         {bill.isRecurring && (
@@ -263,48 +330,64 @@ export default function BillCard({ bill, onStatusChange, onDelete }: BillCardPro
       </div>
       
       {showDetails && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-100">
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className="px-4 pb-4 pt-2 border-t border-gray-100"
+        >
           <div className="text-sm">
             {bill.description && (
-              <p className="text-gray-600 mb-2">{bill.description}</p>
+              <p className="text-gray-600 mb-3">{bill.description}</p>
             )}
             
-            <div className="text-xs text-gray-500">
+            <div className="space-y-2">
               {bill.autoPay && (
-                <div className="flex items-center mb-1">
-                  <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
+                <div className="flex items-center text-xs text-gray-600 bg-green-50 p-1.5 rounded">
+                  <CheckCircleIcon className="h-3.5 w-3.5 mr-1.5 text-green-500" />
                   Set to autopay
                 </div>
               )}
               
-              <div className="flex items-center mb-1">
-                <CalendarIcon className="h-3 w-3 mr-1" />
+              <div className="flex items-center text-xs text-gray-600 bg-blue-50 p-1.5 rounded">
+                <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-blue-500" />
                 Reminder: {bill.reminderDays} days before due date
               </div>
               
               {bill.paymentURL && (
-                <div className="flex items-center mb-1">
-                  <ArrowTopRightOnSquareIcon className="h-3 w-3 mr-1 text-blue-500" />
-                  <a href={bill.paymentURL} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline cursor-pointer">
+                <div className="flex items-center text-xs text-gray-600 bg-purple-50 p-1.5 rounded">
+                  <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5 mr-1.5 text-purple-500" />
+                  <a href={bill.paymentURL} target="_blank" rel="noopener noreferrer" className="text-purple-500 hover:underline cursor-pointer">
                     Payment link
                   </a>
                 </div>
               )}
               
               {bill.paymentHistory && bill.paymentHistory.length > 0 && (
-                <div className="mt-2">
-                  <div className="font-medium text-gray-700 mb-1">Recent Payments</div>
-                  {bill.paymentHistory.map(payment => (
-                    <div key={payment.id} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
-                      <span>{formatDate(payment.paymentDate)}</span>
-                      <span>{formatCurrency(payment.amount)}</span>
-                    </div>
-                  ))}
+                <div className="mt-3 border-t border-gray-100 pt-3">
+                  <div className="font-medium text-gray-700 mb-2">Recent Payments</div>
+                  <div className="max-h-32 overflow-y-auto">
+                    {bill.paymentHistory.map(payment => (
+                      <div 
+                        key={payment.id} 
+                        className="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-gray-600 text-xs">{formatDate(payment.paymentDate)}</span>
+                          {payment.notes && (
+                            <span className="text-gray-500 text-xs italic">{payment.notes}</span>
+                          )}
+                        </div>
+                        <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </motion.div>
   );
