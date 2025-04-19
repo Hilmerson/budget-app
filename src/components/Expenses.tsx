@@ -158,10 +158,7 @@ export default function Expenses() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Expenses</h2>
-          <div className="h-1 w-24 bg-gradient-to-r from-[#58CC02] to-[#00B8D8] rounded-full mt-2"></div>
-        </div>
+        <h2 className="text-2xl font-bold text-gray-800">Expenses</h2>
         {(expenseError || isLoadingExpense) && (
           <Button 
             onClick={handleRefresh}
@@ -177,47 +174,63 @@ export default function Expenses() {
       
       {expenseError && <p className="text-red-500 text-sm">{expenseError}</p>}
       
-      {/* Header with playful illustration */}
-      <Card 
-        className="mb-6 overflow-hidden"
-        variant="colorful"
-      >
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#58CC02] via-[#4D38CA] to-[#FF5800]"></div>
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-[#58CC02] to-[#00B8D8] inline-block text-transparent bg-clip-text mb-2">Expense Management</h2>
-            <p className="text-gray-600 max-w-lg">
-              Track all your expenses in one place. Categorize your spending to better understand your financial habits.
-            </p>
-            
-            {/* Quick Financial Summary */}
-            <div className="flex flex-wrap gap-4 mt-4">
-              <div className="bg-[#F1FAE9] px-4 py-2 rounded-lg border border-[#E6F5D9]">
-                <p className="text-xs text-gray-500">Monthly Expenses</p>
-                <p className="text-lg font-semibold text-[#58CC02]">
-                  ${totalExpenses.toFixed(2)}
-                </p>
-              </div>
-              <div className={`px-4 py-2 rounded-lg border ${remainingIncome >= 0 ? 'bg-[#F1FAE9] border-[#E6F5D9] text-[#58CC02]' : 'bg-[#FFEFEF] border-[#FFE0E0] text-[#FF3F80]'}`}>
-                <p className="text-xs text-gray-500">Remaining Budget</p>
-                <p className="text-lg font-semibold">
-                  ${Math.abs(remainingIncome).toFixed(2)} {remainingIncome < 0 ? 'Over' : ''}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 md:mt-0 relative">
-            <div className="bg-gradient-to-br from-indigo-100 to-blue-50 p-6 rounded-xl">
-              <svg width="120" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-md">
-                <path d="M12 18V6M12 18L17 13M12 18L7 13" stroke="#4D38CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M20 16V21H4V16" stroke="#58CC02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 8V3H20V8" stroke="#FF5800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card 
+          variant="elevated" 
+          className="bg-white"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
               </svg>
-              <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-xs font-bold text-white rounded-full h-8 w-8 flex items-center justify-center transform rotate-12 shadow-sm">New</div>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Monthly Income</p>
+              <p className="text-xl font-semibold text-gray-900">${(afterTaxIncome / 12).toLocaleString()}</p>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+        
+        <Card 
+          variant="elevated" 
+          className="bg-white"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Monthly Expenses</p>
+              <p className="text-xl font-semibold text-gray-900">${totalExpenses.toLocaleString()}</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card 
+          variant="elevated" 
+          className="bg-white"
+        >
+          <div className="flex items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${remainingIncome >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Remaining Budget</p>
+              <p className={`text-xl font-semibold ${remainingIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${Math.abs(remainingIncome).toLocaleString()} {remainingIncome < 0 ? 'Over' : ''}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
       
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -225,8 +238,7 @@ export default function Expenses() {
         <div className="md:col-span-1">
           <Card 
             title="Add New Expense" 
-            variant="accent"
-            accentColor="green"
+            variant="outlined"
             className="h-full"
           >
             <div className="space-y-4">
@@ -281,7 +293,7 @@ export default function Expenses() {
         <div className="md:col-span-2">
           <Card 
             title="Your Expenses" 
-            variant="elevated"
+            variant="outlined"
             className="h-full"
           >
             {isLoadingExpense ? (
@@ -314,7 +326,7 @@ export default function Expenses() {
                     className="flex items-center justify-between py-4 first:pt-0 last:pb-0 group hover:bg-gray-50 px-2 rounded-lg transition duration-150"
                   >
                     <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-4">
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-4 flex-shrink-0">
                         <span aria-hidden="true">{expense.category.charAt(0)}</span>
                       </div>
                       <div>
@@ -324,7 +336,7 @@ export default function Expenses() {
                           <span>/</span>
                           <span>{formatFrequency(expense.frequency)}</span>
                           <span className="text-gray-400">•</span>
-                          <span className="text-red-600 font-medium">
+                          <span className="text-gray-900 font-medium">
                             ${calculateMonthlyAmount(expense).toLocaleString()}/mo
                           </span>
                         </div>
@@ -369,50 +381,15 @@ export default function Expenses() {
                 ))}
               </div>
             )}
-            
-            {/* Budget Summary */}
-            {expenses.length > 0 && (
-              <div className="mt-6 bg-indigo-50 rounded-lg p-5">
-                <h3 className="text-lg font-semibold text-indigo-900 mb-3">Budget Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card 
-                    variant="elevated" 
-                    padding="small"
-                    className="bg-white"
-                  >
-                    <div className="text-sm text-gray-500">Monthly Income</div>
-                    <div className="text-2xl font-bold text-green-600">${(afterTaxIncome / 12).toLocaleString()}</div>
-                  </Card>
-                  <Card 
-                    variant="elevated" 
-                    padding="small"
-                    className="bg-white"
-                  >
-                    <div className="text-sm text-gray-500">Monthly Expenses</div>
-                    <div className="text-2xl font-bold text-red-600">${totalExpenses.toLocaleString()}</div>
-                  </Card>
-                  <Card 
-                    variant="elevated" 
-                    padding="small"
-                    className="bg-white"
-                  >
-                    <div className="text-sm text-gray-500">Remaining</div>
-                    <div className={`text-2xl font-bold ${remainingIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${remainingIncome.toLocaleString()}
-                    </div>
-                  </Card>
-                </div>
-              </div>
-            )}
           </Card>
         </div>
       </div>
       
       {/* XP Gain Animation */}
       <XPGainAnimation 
-        show={showXpAnimation} 
+        isVisible={showXpAnimation} 
         amount={xpAmount} 
-        onComplete={handleAnimationComplete} 
+        onAnimationComplete={handleAnimationComplete} 
       />
     </div>
   );
