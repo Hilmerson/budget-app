@@ -23,6 +23,18 @@ ChartJS.register(
   Legend
 );
 
+// Vibrant color palette (Duolingo-inspired)
+const appColors = {
+  primary: 'rgba(88, 204, 2, 0.7)',     // Bright green 
+  secondary: 'rgba(77, 56, 202, 0.7)',  // Indigo
+  accent1: 'rgba(255, 88, 0, 0.7)',     // Orange
+  accent2: 'rgba(255, 63, 128, 0.7)',   // Magenta
+  accent3: 'rgba(0, 184, 216, 0.7)',    // Teal
+  accent4: 'rgba(255, 200, 0, 0.7)',    // Yellow
+  accent5: 'rgba(175, 82, 222, 0.7)',   // Purple
+  gray: 'rgba(240, 240, 240, 0.7)'      // Light gray
+};
+
 // Sample budget data (in a real app, this would come from the store or API)
 const budgetData: Record<string, number> = {
   'Housing': 1200,
@@ -77,16 +89,16 @@ export default function BudgetToActualBarChart() {
       {
         label: 'Budget',
         data: allCategories.map(category => budgetData[category] || 0),
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: appColors.secondary,
+        borderColor: 'rgba(77, 56, 202, 1)',
         borderWidth: 1,
         borderRadius: 4,
       },
       {
         label: 'Actual',
         data: allCategories.map(category => Math.round(expensesByCategory[category] || 0)),
-        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: appColors.accent2,
+        borderColor: 'rgba(255, 63, 128, 1)',
         borderWidth: 1,
         borderRadius: 4,
       }
@@ -134,7 +146,8 @@ export default function BudgetToActualBarChart() {
             size: 12
           },
           usePointStyle: true,
-          padding: 20
+          padding: 20,
+          color: '#4b5563'
         }
       },
       tooltip: {
@@ -183,8 +196,21 @@ export default function BudgetToActualBarChart() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Budget vs. Actual Spending</h3>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 relative overflow-hidden">
+      {/* Decorative background element */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500"></div>
+      
+      <div className="flex items-center mb-4">
+        <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900">Budget vs. Actual Spending</h3>
+      </div>
+      
       <div className="h-64">
         <Bar data={chartData} options={chartOptions} />
       </div>
