@@ -176,7 +176,7 @@ export default function Income() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Income Sources</h2>
         {(incomeError || isLoadingIncome) && (
           <Button 
@@ -193,29 +193,62 @@ export default function Income() {
       
       {incomeError && <p className="text-red-500 text-sm">{incomeError}</p>}
       
-      {/* Header with illustration */}
-      <Card 
-        className="mb-6"
-        variant="elevated"
-      >
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-indigo-800 mb-2">Income Management</h2>
-            <p className="text-gray-600 max-w-lg">
-              Track all your income sources in one place. Add multiple income streams to get a complete picture of your finances.
-            </p>
-          </div>
-          <div className="mt-4 md:mt-0">
-            <div className="bg-indigo-100 p-3 rounded-lg">
-              <svg width="120" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 6V18M12 6L7 11M12 6L17 11" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M20 16V21H4V16" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 8V3H20V8" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card 
+          variant="elevated" 
+          className="bg-white"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
               </svg>
             </div>
+            <div>
+              <p className="text-sm text-gray-500">Monthly Income</p>
+              <p className="text-xl font-semibold text-gray-900">${totalIncome.toLocaleString()}</p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+        
+        <Card 
+          variant="elevated" 
+          className="bg-white"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Annual Income</p>
+              <p className="text-xl font-semibold text-green-600">${(totalIncome * 12).toLocaleString()}</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card 
+          variant="elevated" 
+          className="bg-white"
+        >
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-3 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                <path d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Employment Type</p>
+              <p className="text-xl font-semibold text-indigo-600 capitalize">{employmentMode.replace('-', ' ')}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
       
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -223,7 +256,8 @@ export default function Income() {
         <div className="md:col-span-1">
           <Card 
             title="Add Income Source" 
-            variant="elevated"
+            variant="outlined"
+            className="h-full"
           >
             <div className="space-y-4">
               <Select
@@ -267,7 +301,7 @@ export default function Income() {
                 isLoading={isSubmitting}
                 fullWidth
               >
-                {isSubmitting ? 'Adding...' : 'Add Income Source'}
+                Add Income Source
               </Button>
             </div>
           </Card>
@@ -275,9 +309,11 @@ export default function Income() {
 
         {/* Income List */}
         <div className="md:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm p-6 h-full">
-            <h3 className="text-xl font-semibold text-indigo-900 mb-4">Your Income Sources</h3>
-            
+          <Card 
+            title="Your Income Sources"
+            variant="outlined"
+            className="h-full"
+          >
             {isLoadingIncome ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-gray-50 rounded-lg h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
@@ -308,10 +344,10 @@ export default function Income() {
                     className="flex items-center justify-between py-4 first:pt-0 last:pb-0 group hover:bg-gray-50 px-2 rounded-lg transition duration-150"
                   >
                     <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-4">
-                        {income.source.charAt(0)}
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-4 flex-shrink-0">
+                        <span aria-hidden="true">{income.source.charAt(0)}</span>
                       </div>
-                      <div>
+                      <div className="flex flex-col">
                         <h4 className="font-medium text-gray-900 text-base">{income.source}</h4>
                         <div className="text-gray-500 flex items-center space-x-2 text-sm">
                           <span className="font-medium text-gray-900">${income.amount.toLocaleString()}</span>
@@ -329,7 +365,9 @@ export default function Income() {
                         )}
                       </div>
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={async () => {
                         try {
                           // First remove from UI state for responsive feel
@@ -343,55 +381,29 @@ export default function Income() {
                           if (!response.ok) {
                             throw new Error('Failed to delete income from database');
                           }
-                          
-                          // No need to reload the page after deletion
-                          // The UI state is already updated by removeIncome
                         } catch (error) {
                           console.error('Error deleting income:', error);
-                          // You could show an error message to the user here
                         }
                       }}
-                      className="text-gray-400 hover:text-red-600 transition-colors group-hover:opacity-100 opacity-0 md:opacity-100"
+                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      aria-label={`Delete ${income.source} income`}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                       </svg>
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
             )}
-            
-            {/* Income Summary */}
-            {incomes.length > 0 && (
-              <>
-                <div className="mt-6 bg-indigo-50 rounded-lg p-5">
-                  <h3 className="text-lg font-semibold text-indigo-900 mb-3">Income Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-sm text-gray-500">Monthly Income</div>
-                      <div className="text-2xl font-bold text-green-600">${totalIncome.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-sm text-gray-500">Annual Income</div>
-                      <div className="text-2xl font-bold text-green-600">${(totalIncome * 12).toLocaleString()}</div>
-                    </div>
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                      <div className="text-sm text-gray-500">Employment Type</div>
-                      <div className="text-2xl font-bold text-indigo-700 capitalize">{employmentMode.replace('-', ' ')}</div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          </Card>
         </div>
       </div>
       
-      {/* XP Animation */}
+      {/* XP Gain Animation */}
       <XPGainAnimation 
-        amount={xpAmount} 
         isVisible={showXpAnimation} 
+        amount={xpAmount} 
         onAnimationComplete={handleAnimationComplete} 
       />
     </div>
