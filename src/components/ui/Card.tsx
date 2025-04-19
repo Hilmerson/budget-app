@@ -12,7 +12,8 @@ export interface CardProps {
   subtitle?: string | ReactNode;
   subtitleClassName?: string;
   action?: ReactNode;
-  variant?: 'default' | 'outlined' | 'elevated';
+  variant?: 'default' | 'outlined' | 'elevated' | 'colorful' | 'accent';
+  accentColor?: 'green' | 'indigo' | 'orange' | 'pink' | 'teal' | 'yellow' | 'purple';
   isClickable?: boolean;
   onClick?: () => void;
   fullWidth?: boolean;
@@ -32,6 +33,7 @@ export function Card({
   subtitleClassName,
   action,
   variant = 'default',
+  accentColor = 'green',
   isClickable = false,
   onClick,
   fullWidth = true,
@@ -40,10 +42,25 @@ export function Card({
   ...props
 }: CardProps) {
   const variantStyles = {
-    default: 'bg-white',
+    default: 'bg-white border border-gray-100',
     outlined: 'bg-white border border-gray-200',
-    elevated: 'bg-white shadow-md',
+    elevated: 'bg-white shadow-md border border-gray-50',
+    colorful: `bg-gradient-to-br from-white to-gray-50 border border-gray-100`,
+    accent: getAccentStyle(accentColor),
   };
+
+  function getAccentStyle(color: CardProps['accentColor']) {
+    const accentColors = {
+      green: 'border-l-4 border-l-[#58CC02] border-t border-r border-b border-gray-100',
+      indigo: 'border-l-4 border-l-[#4D38CA] border-t border-r border-b border-gray-100',
+      orange: 'border-l-4 border-l-[#FF5800] border-t border-r border-b border-gray-100',
+      pink: 'border-l-4 border-l-[#FF3F80] border-t border-r border-b border-gray-100',
+      teal: 'border-l-4 border-l-[#00B8D8] border-t border-r border-b border-gray-100',
+      yellow: 'border-l-4 border-l-[#FFC800] border-t border-r border-b border-gray-100',
+      purple: 'border-l-4 border-l-[#AF52DE] border-t border-r border-b border-gray-100',
+    };
+    return accentColors[color as keyof typeof accentColors] || accentColors.green;
+  }
 
   const paddingStyles = {
     none: 'p-0',
@@ -53,7 +70,9 @@ export function Card({
   };
 
   const widthStyles = fullWidth ? 'w-full' : '';
-  const clickableStyles = isClickable ? 'hover:shadow-lg transition-shadow cursor-pointer' : '';
+  const clickableStyles = isClickable 
+    ? 'hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer' 
+    : '';
   
   // Apply accessibility attributes for clickable cards
   const accessibilityProps = isClickable && onClick ? makeAccessibleButton(onClick) : {};
@@ -61,7 +80,7 @@ export function Card({
   return (
     <div
       className={twMerge(
-        'rounded-lg',
+        'rounded-xl',
         variantStyles[variant],
         paddingStyles[padding],
         widthStyles,

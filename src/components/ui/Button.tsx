@@ -34,22 +34,22 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // Base styles
     const baseStyles = "inline-flex items-center justify-center font-medium transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2";
     
-    // Variant styles
+    // Vibrant Duolingo-inspired variant styles
     const variantStyles = {
-      primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 shadow-sm",
+      primary: "bg-gradient-to-r from-[#58CC02] to-[#40A002] text-white hover:from-[#40A002] hover:to-[#2C8000] focus:ring-[#58CC02] shadow-sm",
       secondary: "bg-gray-100 text-gray-800 hover:bg-gray-200 focus:ring-gray-400",
-      outline: "bg-transparent text-indigo-600 border border-indigo-300 hover:bg-indigo-50 focus:ring-indigo-500",
-      danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm",
-      success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-sm",
+      outline: "bg-transparent text-[#58CC02] border border-[#58CC02] hover:bg-[#F1FAE9] focus:ring-[#58CC02]",
+      danger: "bg-gradient-to-r from-[#FF3F80] to-[#E71D36] text-white hover:from-[#E71D36] hover:to-[#C31A30] focus:ring-[#FF3F80] shadow-sm",
+      success: "bg-gradient-to-r from-[#58CC02] to-[#40A002] text-white hover:from-[#40A002] hover:to-[#2C8000] focus:ring-[#58CC02] shadow-sm",
       ghost: "bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-400",
     };
     
-    // Size styles
+    // Size styles with improved padding for better touch targets
     const sizeStyles = {
-      xs: "text-xs px-2 py-1",
-      sm: "text-sm px-3 py-1.5",
-      md: "text-sm px-4 py-2.5",
-      lg: "text-base px-5 py-3",
+      xs: "text-xs px-2.5 py-1.5 rounded-md",
+      sm: "text-sm px-3.5 py-2 rounded-md",
+      md: "text-sm px-5 py-2.5 rounded-lg",
+      lg: "text-base px-6 py-3.5 rounded-lg font-semibold",
     };
     
     // Disabled styles override
@@ -62,8 +62,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     
     // Merge the variant and size classes with any additional className
     const buttonClasses = classNames(
-      'inline-flex items-center justify-center rounded-md font-medium focus:outline-none',
-      'transition-colors duration-150 ease-in-out',
+      'inline-flex items-center justify-center font-medium focus:outline-none',
+      'transition-all duration-200 ease-in-out',
       'cursor-pointer', // Add cursor-pointer to all buttons
       variantStyles[variant],
       sizeStyles[size],

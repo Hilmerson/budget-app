@@ -157,8 +157,11 @@ export default function Expenses() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Expenses</h2>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Expenses</h2>
+          <div className="h-1 w-24 bg-gradient-to-r from-[#58CC02] to-[#00B8D8] rounded-full mt-2"></div>
+        </div>
         {(expenseError || isLoadingExpense) && (
           <Button 
             onClick={handleRefresh}
@@ -174,25 +177,43 @@ export default function Expenses() {
       
       {expenseError && <p className="text-red-500 text-sm">{expenseError}</p>}
       
-      {/* Header with illustration */}
+      {/* Header with playful illustration */}
       <Card 
-        className="mb-6"
-        variant="elevated"
+        className="mb-6 overflow-hidden"
+        variant="colorful"
       >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#58CC02] via-[#4D38CA] to-[#FF5800]"></div>
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-indigo-800 mb-2">Expense Management</h2>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-[#58CC02] to-[#00B8D8] inline-block text-transparent bg-clip-text mb-2">Expense Management</h2>
             <p className="text-gray-600 max-w-lg">
               Track all your expenses in one place. Categorize your spending to better understand your financial habits.
             </p>
+            
+            {/* Quick Financial Summary */}
+            <div className="flex flex-wrap gap-4 mt-4">
+              <div className="bg-[#F1FAE9] px-4 py-2 rounded-lg border border-[#E6F5D9]">
+                <p className="text-xs text-gray-500">Monthly Expenses</p>
+                <p className="text-lg font-semibold text-[#58CC02]">
+                  ${totalExpenses.toFixed(2)}
+                </p>
+              </div>
+              <div className={`px-4 py-2 rounded-lg border ${remainingIncome >= 0 ? 'bg-[#F1FAE9] border-[#E6F5D9] text-[#58CC02]' : 'bg-[#FFEFEF] border-[#FFE0E0] text-[#FF3F80]'}`}>
+                <p className="text-xs text-gray-500">Remaining Budget</p>
+                <p className="text-lg font-semibold">
+                  ${Math.abs(remainingIncome).toFixed(2)} {remainingIncome < 0 ? 'Over' : ''}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="mt-4 md:mt-0">
-            <div className="bg-indigo-100 p-3 rounded-lg">
-              <svg width="120" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 18V6M12 18L17 13M12 18L7 13" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M20 16V21H4V16" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4 8V3H20V8" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <div className="mt-4 md:mt-0 relative">
+            <div className="bg-gradient-to-br from-indigo-100 to-blue-50 p-6 rounded-xl">
+              <svg width="120" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-md">
+                <path d="M12 18V6M12 18L17 13M12 18L7 13" stroke="#4D38CA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M20 16V21H4V16" stroke="#58CC02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 8V3H20V8" stroke="#FF5800" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
+              <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-xs font-bold text-white rounded-full h-8 w-8 flex items-center justify-center transform rotate-12 shadow-sm">New</div>
             </div>
           </div>
         </div>
@@ -204,7 +225,9 @@ export default function Expenses() {
         <div className="md:col-span-1">
           <Card 
             title="Add New Expense" 
-            variant="elevated"
+            variant="accent"
+            accentColor="green"
+            className="h-full"
           >
             <div className="space-y-4">
               <Select
@@ -254,7 +277,7 @@ export default function Expenses() {
           </Card>
         </div>
 
-        {/* Expense List */}
+        {/* Expenses List */}
         <div className="md:col-span-2">
           <Card 
             title="Your Expenses" 
@@ -385,11 +408,11 @@ export default function Expenses() {
         </div>
       </div>
       
-      {/* XP Animation */}
+      {/* XP Gain Animation */}
       <XPGainAnimation 
+        show={showXpAnimation} 
         amount={xpAmount} 
-        isVisible={showXpAnimation} 
-        onAnimationComplete={handleAnimationComplete} 
+        onComplete={handleAnimationComplete} 
       />
     </div>
   );
