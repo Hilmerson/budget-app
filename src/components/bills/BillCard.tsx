@@ -95,18 +95,16 @@ const getProgressPercentage = (daysUntilDue: number, reminderDays: number) => {
   // Ensure we don't go over 100% or under 0%
   if (daysUntilDue <= 0) return 100;
   
-  // Calculate a reasonable maximum period based on the reminder days
-  // For bills due in the distant future, we'll use a standard scale
-  const maxDaysToShow = Math.max(reminderDays * 3, 30); // At least 30 days or 3x reminder days
+  // For bills more than a month away, show a small progress instead of almost zero
+  if (daysUntilDue > 30) {
+    return 10; // Show 10% filled for bills more than a month away
+  }
   
-  // If the due date is very far in the future, cap it to our maximum display range
-  const cappedDaysUntilDue = Math.min(daysUntilDue, maxDaysToShow);
+  // For bills within the next month, scale the progress more proportionally
+  const maxDaysToShow = 30; // One month view
+  const progress = ((maxDaysToShow - daysUntilDue) / maxDaysToShow) * 100;
   
-  // Calculate progress as a percentage of our capped range
-  // We invert the percentage so that closer due dates have higher percentages
-  const progress = ((maxDaysToShow - cappedDaysUntilDue) / maxDaysToShow) * 100;
-  
-  return Math.min(Math.max(progress, 0), 100);
+  return Math.min(Math.max(progress, 10), 100); // Never go below 10% or above 100%
 };
 
 export default function BillCard({ bill, onStatusChange, onDelete, onPin }: BillCardProps) {
