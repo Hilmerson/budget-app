@@ -95,9 +95,16 @@ const getProgressPercentage = (daysUntilDue: number, reminderDays: number) => {
   // Ensure we don't go over 100% or under 0%
   if (daysUntilDue <= 0) return 100;
   
-  // We'll use reminderDays + 10 as our "full period" to make the progress more visible
-  const fullPeriod = reminderDays + 10;
-  const progress = ((fullPeriod - daysUntilDue) / fullPeriod) * 100;
+  // Calculate a reasonable maximum period based on the reminder days
+  // For bills due in the distant future, we'll use a standard scale
+  const maxDaysToShow = Math.max(reminderDays * 3, 30); // At least 30 days or 3x reminder days
+  
+  // If the due date is very far in the future, cap it to our maximum display range
+  const cappedDaysUntilDue = Math.min(daysUntilDue, maxDaysToShow);
+  
+  // Calculate progress as a percentage of our capped range
+  // We invert the percentage so that closer due dates have higher percentages
+  const progress = ((maxDaysToShow - cappedDaysUntilDue) / maxDaysToShow) * 100;
   
   return Math.min(Math.max(progress, 0), 100);
 };
