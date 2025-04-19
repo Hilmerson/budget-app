@@ -6,6 +6,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LevelProgress, XPGainAnimation } from './Gamification';
 import { useBudgetStore } from '@/store/useBudgetStore';
+import {
+  HomeIcon,
+  CreditCardIcon,
+  BanknotesIcon,
+  CalendarIcon,
+  TrophyIcon,
+  UserIcon,
+  ArrowRightOnRectangleIcon,
+  ChartBarIcon,
+} from '@heroicons/react/24/outline';
 
 export default function DashboardSidebar() {
   const { data: session, status } = useSession();
@@ -40,6 +50,7 @@ export default function DashboardSidebar() {
     if (path.includes('/dashboard/income')) return 'income';
     if (path.includes('/dashboard/expenses')) return 'expenses';
     if (path.includes('/dashboard/bills')) return 'bills';
+    if (path.includes('/dashboard/insights')) return 'insights';
     if (path.includes('/dashboard/achievements')) return 'achievements';
     if (path.includes('/profile')) return 'profile';
     return 'dashboard';
@@ -64,12 +75,12 @@ export default function DashboardSidebar() {
 
   // Sidebar items configuration
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dashboard' },
-    { id: 'income', label: 'Income', icon: '💰', path: '/dashboard/income' },
-    { id: 'expenses', label: 'Expenses', icon: '💸', path: '/dashboard/expenses' },
-    { id: 'bills', label: 'Bills', icon: '📅', path: '/dashboard/bills' },
-    { id: 'achievements', label: 'Achievements', icon: '🏆', path: '/dashboard/achievements' },
-    { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
+    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+    { name: 'Expenses', href: '/dashboard/expenses', icon: CreditCardIcon },
+    { name: 'Income', href: '/dashboard/income', icon: BanknotesIcon },
+    { name: 'Bills', href: '/dashboard/bills', icon: CalendarIcon },
+    { name: 'Insights', href: '/dashboard/insights', icon: ChartBarIcon },
+    { name: 'Achievements', href: '/dashboard/achievements', icon: TrophyIcon },
   ];
 
   return (
@@ -111,16 +122,16 @@ export default function DashboardSidebar() {
               <nav className="space-y-1">
                 {sidebarItems.map((item) => (
                   <Link
-                    key={item.id}
-                    href={item.path}
+                    key={item.name}
+                    href={item.href}
                     className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors ${
-                      activeSection === item.id
+                      activeSection === item.name.toLowerCase()
                         ? 'bg-blue-100 text-blue-600'
                         : 'hover:bg-gray-100'
                     }`}
                   >
-                    <span className="mr-3">{item.icon}</span>
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <item.icon className="h-5 w-5 mr-3" />
+                    <span className="text-sm font-medium">{item.name}</span>
                   </Link>
                 ))}
               </nav>
