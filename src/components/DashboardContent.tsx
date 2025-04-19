@@ -10,6 +10,9 @@ import {
   SavingsGoalCard,
   BudgetComparisonCard 
 } from './Illustrations';
+import ExpensePieChart from './charts/ExpensePieChart';
+import BudgetToActualBarChart from './charts/BudgetToActualBarChart';
+import SavingsProgressChart from './charts/SavingsProgressChart';
 
 export default function DashboardContent() {
   const { data: session } = useSession();
@@ -91,6 +94,18 @@ export default function DashboardContent() {
       </div>
       
       <FinancialHealthCard score={healthScore} />
+      
+      {/* Visual Charts Section */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Financial Overview</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ExpensePieChart />
+          <BudgetToActualBarChart />
+          <SavingsProgressChart />
+        </div>
+      </div>
+      
+      {/* Original comparison cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BudgetComparisonCard categories={[
           { name: 'Housing', budgeted: 1200, spent: 1150 },
