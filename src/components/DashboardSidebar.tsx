@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -15,12 +15,18 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
   ChartBarIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  WalletIcon,
 } from '@heroicons/react/24/outline';
 
 export default function DashboardSidebar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  
+  // State for tracking open dropdowns
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   // Extract store values with a fallback for xpGainAnimation
   const store = useBudgetStore();
@@ -58,6 +64,16 @@ export default function DashboardSidebar() {
 
   const activeSection = getActiveSectionFromPath(pathname || '');
 
+  // Check if the spending section is active
+  const isSpendingActive = activeSection === 'expenses' || activeSection === 'bills';
+
+  // Auto-open the dropdown if a child item is active
+  useEffect(() => {
+    if (isSpendingActive) {
+      setOpenDropdown('spending');
+    }
+  }, [isSpendingActive]);
+
   // Get user initials for avatar
   const getUserInitials = (): string => {
     if (!session?.user?.name) return '?';
@@ -73,14 +89,42 @@ export default function DashboardSidebar() {
     signOut({ callbackUrl: '/login' });
   };
 
+  // Toggle dropdown open/closed
+  const toggleDropdown = (id: string) => {
+    setOpenDropdown(openDropdown === id ? null : id);
+  };
+
   // Sidebar items configuration
   const sidebarItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Expenses', href: '/dashboard/expenses', icon: CreditCardIcon },
-    { name: 'Income', href: '/dashboard/income', icon: BanknotesIcon },
-    { name: 'Bills', href: '/dashboard/bills', icon: CalendarIcon },
-    { name: 'Insights', href: '/dashboard/insights', icon: ChartBarIcon },
-    { name: 'Achievements', href: '/dashboard/achievements', icon: TrophyIcon },
+    { 
+      name: 'Dashboard', 
+      href: '/dashboard', 
+      icon: HomeIcon 
+    },
+    { 
+      name: 'Income', 
+      href: '/dashboard/income', 
+      icon: BanknotesIcon 
+    },
+    {
+      name: 'Spending',
+      id: 'spending',
+      icon: WalletIcon,
+      submenu: [
+        { name: 'Expenses', href: '/dashboard/expenses', icon: CreditCardIcon },
+        { name: 'Bills', href: '/dashboard/bills', icon: CalendarIcon },
+      ]
+    },
+    { 
+      name: 'Insights', 
+      href: '/dashboard/insights', 
+      icon: ChartBarIcon 
+    },
+    { 
+      name: 'Achievements', 
+      href: '/dashboard/achievements', 
+      icon: TrophyIcon 
+    },
   ];
 
   return (
@@ -121,18 +165,59 @@ export default function DashboardSidebar() {
             
               <nav className="space-y-1">
                 {sidebarItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors ${
-                      activeSection === item.name.toLowerCase()
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5 mr-3" />
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </Link>
+                  <div key={item.name}>
+                    {item.submenu ? (
+                      <div className="mb-1">
+                        <button
+                          className={`flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+                            isSpendingActive ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'
+                          }`}
+                          onClick={() => toggleDropdown(item.id)}
+                        >
+                          <div className="flex items-center">
+                            <item.icon className="h-5 w-5 mr-3" />
+                            <span className="text-sm font-medium">{item.name}</span>
+                          </div>
+                          {openDropdown === item.id ? (
+                            <ChevronUpIcon className="h-4 w-4" />
+                          ) : (
+                            <ChevronDownIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                        
+                        {openDropdown === item.id && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            {item.submenu.map((subItem) => (
+                              <Link
+                                key={subItem.name}
+                                href={subItem.href}
+                                className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors ${
+                                  activeSection === subItem.name.toLowerCase()
+                                    ? 'bg-blue-50 text-blue-600'
+                                    : 'hover:bg-gray-100'
+                                }`}
+                              >
+                                <subItem.icon className="h-4 w-4 mr-3" />
+                                <span className="text-sm">{subItem.name}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        className={`flex items-center w-full px-3 py-2 rounded-lg transition-colors ${
+                          activeSection === item.name.toLowerCase()
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        <item.icon className="h-5 w-5 mr-3" />
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </Link>
+                    )}
+                  </div>
                 ))}
               </nav>
             </div>
